@@ -1,7 +1,5 @@
 # HealthCare Booking System
 
----
-
 ## Stack
 
 ### Frontend
@@ -18,7 +16,6 @@
 
 - MySQL
 
----
 
 ## Tổng quan dự án (SaaS)
 
@@ -42,13 +39,11 @@ Nền tảng đặt lịch khám bệnh trực tuyến giúp kết nối **bện
   - Phê duyệt bác sĩ
   - Thống kê hệ thống
 
----
 
 ## Cấu trúc dữ liệu
 
 <img width="1026" height="805" alt="Screenshot 2025-07-11 at 21 35 14" src="https://github.com/user-attachments/assets/d91866c3-755d-447c-bbd4-52f39a61e179" />
 
----
 
 ## Các tính năng chính
 
@@ -60,7 +55,6 @@ Nền tảng đặt lịch khám bệnh trực tuyến giúp kết nối **bện
 6. **Quản lý hồ sơ khám bệnh**
 7. **Quản lý thời gian làm việc của bác sĩ**
 
----
 
 ## Luồng hoạt động
 
@@ -71,7 +65,6 @@ Nền tảng đặt lịch khám bệnh trực tuyến giúp kết nối **bện
 - Gửi nhắc lịch trước 24h
 - Bác sĩ cập nhật hồ sơ sau khi khám
 
----
 
 ## Logic quan trọng
 
@@ -80,7 +73,6 @@ Nền tảng đặt lịch khám bệnh trực tuyến giúp kết nối **bện
 - **Patient có thể hủy lịch trước X giờ**
 - **Role-based routing**
 
----
 
 ## API Endpoint
 
@@ -157,9 +149,8 @@ Nền tảng đặt lịch khám bệnh trực tuyến giúp kết nối **bện
 | DELETE | `/api/admin/users/:id` | Xóa người dùng |
 | PUT    | `/api/admin/doctors/:id/approve` | Phê duyệt bác sĩ |
 
----
 
-## 🖥️ Client Page (SaaS)
+## Client Page (SaaS)
 
 ### Public Pages
 
@@ -201,9 +192,8 @@ Nền tảng đặt lịch khám bệnh trực tuyến giúp kết nối **bện
 | `/admin/users` | Quản lý người dùng |
 | `/admin/doctors` | Duyệt bác sĩ |
 
----
 
-## Khả năng mở rộng
+## Khả Năng Mở Rộng
 
 - Tích hợp thanh toán online
 - Lịch sử thanh toán
