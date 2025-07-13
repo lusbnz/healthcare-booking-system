@@ -1,110 +1,186 @@
 "use client";
 
+import {
+  Calendar,
+  Users,
+  LogOut,
+  FileText,
+  CalendarClock,
+  Stethoscope,
+  UserCog,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DialogContent } from "@/components/ui/dialog";
+import clsx from "clsx";
 
-interface NavLink {
+type NavLink = {
   label: string;
   href: string;
-}
+  icon: React.ReactNode;
+};
 
-interface SidebarProps {
+export function Sidebar({
+  role,
+  collapsed = false,
+  isOverlay = false,
+}: {
   role: string;
-}
-
-export function Sidebar({ role }: SidebarProps) {
+  collapsed?: boolean;
+  isOverlay?: boolean;
+}) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  const baseLinks: NavLink[] = [{ label: "Trang chủ", href: "/dashboard" }];
+  const router = useRouter();
 
   const patientLinks: NavLink[] = [
-    { label: "Tìm bác sĩ", href: "/dashboard/doctors" },
-    { label: "Lịch hẹn", href: "/dashboard/appointments" },
-    { label: "Hồ sơ khám", href: "/dashboard/medical-records" },
+    {
+      label: "Tìm bác sĩ",
+      href: "/dashboard/doctors",
+      icon: <Stethoscope size={16} />,
+    },
+    {
+      label: "Lịch hẹn",
+      href: "/dashboard/appointments",
+      icon: <Calendar size={16} />,
+    },
+    {
+      label: "Hồ sơ khám",
+      href: "/dashboard/medical-records",
+      icon: <FileText size={16} />,
+    },
   ];
 
   const doctorLinks: NavLink[] = [
-    { label: "Lịch làm việc", href: "/dashboard/availability" },
-    { label: "Bệnh nhân", href: "/dashboard/patients" },
-    { label: "Lịch hẹn", href: "/dashboard/my-schedule" },
+    {
+      label: "Lịch làm việc",
+      href: "/dashboard/availability",
+      icon: <CalendarClock size={16} />,
+    },
+    {
+      label: "Bệnh nhân",
+      href: "/dashboard/patients",
+      icon: <Users size={16} />,
+    },
+    {
+      label: "Lịch hẹn",
+      href: "/dashboard/my-schedule",
+      icon: <Calendar size={16} />,
+    },
   ];
 
   const adminLinks: NavLink[] = [
-    { label: "Quản lý người dùng", href: "/dashboard/admin/users" },
-    { label: "Duyệt bác sĩ", href: "/dashboard/admin/doctors" },
+    {
+      label: "Quản lý người dùng",
+      href: "/dashboard/admin/users",
+      icon: <UserCog size={16} />,
+    },
+    {
+      label: "Duyệt bác sĩ",
+      href: "/dashboard/admin/doctors",
+      icon: <Stethoscope size={16} />,
+    },
   ];
 
-  const roleLinks =
+  const links =
     role === "patient"
       ? patientLinks
       : role === "doctor"
       ? doctorLinks
       : adminLinks;
 
-  const links = [...baseLinks, ...roleLinks];
-
-  const NavContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+  const SidebarContent = (
+    <aside
+      className={clsx(
+        "flex flex-col h-full bg-white px-4 py-4 transition-all duration-300",
+        collapsed ? "w-[72px]" : "w-[240px]",
+        isOverlay ? "h-screen" : "border-r"
+      )}
+    >
+      <div className="flex items-center justify-between mb-6">
+        {!collapsed && (
+          <Link href="/dashboard" className="font-bold text-lg">
+            Helicopter
+          </Link>
+        )}
       </div>
-      <ScrollArea className="flex-1">
-        <nav className="space-y-1 p-4">
-          {links.map((link) => (
+
+      <nav className="flex-1 space-y-1">
+        {links.map((link) => {
+          const isActive = pathname.startsWith(link.href);
+          return (
             <Link
               key={link.href}
               href={link.href}
-              className={cn(
-                "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                pathname === link.href
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              className={clsx(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "",
+                collapsed ? "justify-center px-0" : ""
               )}
-              onClick={() => setOpen(false)}
             >
-              <span className="truncate">{link.label}</span>
+              {link.icon}
+              {!collapsed && <span>{link.label}</span>}
             </Link>
-          ))}
-        </nav>
-      </ScrollArea>
-    </div>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto pt-4 border-t">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className={clsx(
+                "w-full flex items-center px-3 py-2",
+                collapsed ? "justify-center px-0" : "justify-between"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback>U</AvatarFallback>
+                </Avatar>
+                {!collapsed && (
+                  <span className="text-sm font-medium">Tài khoản</span>
+                )}
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-full">
+            <DropdownMenuItem
+              className="flex items-center gap-2"
+              onClick={() => router.push("/profile")}
+            >
+              <Settings size={16} />
+              Cài đặt
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex items-center gap-2 text-red-600"
+              onClick={() => router.push("/auth/login")}
+            >
+              <LogOut size={16} />
+              Đăng xuất
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </aside>
   );
 
-  return (
-    <>
-      <div className="md:hidden p-4">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="fixed top-4 left-4 z-50"
-            >
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[240px] p-0">
-            <NavContent />
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      <aside
-        className={cn(
-          "hidden md:block w-[240px] bg-white border-r",
-          "h-screen sticky top-0"
-        )}
-      >
-        <NavContent />
-      </aside>
-    </>
+  return isOverlay ? (
+    <DialogContent className="p-0 w-[240px] rounded-none border-none left-[120px]">
+      {SidebarContent}
+    </DialogContent>
+  ) : (
+    SidebarContent
   );
 }
