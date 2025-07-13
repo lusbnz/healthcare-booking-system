@@ -1,28 +1,23 @@
-# Python bytecode & cache
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environment
+# Virtualenv
 venv/
-.env/
 .env  # file chứa biến môi trường
 
-# Django stuff:
+# Django
 *.log
 *.pot
 *.pyc
+*.sqlite3
 db.sqlite3
 media/
 staticfiles/
 static_root/
 
-# Migrations (nếu bạn không muốn track migration files, tuy nhiên thường nên giữ chúng)
-# ** Uncomment nếu bạn muốn bỏ git migrations **
-# */migrations/*.py
-# !*/migrations/__init__.py
-
-# IDEs & editors
+# IDEs
 .vscode/
 .idea/
 *.sublime-project
@@ -38,10 +33,9 @@ Thumbs.db
 **/Dockerfile
 **/docker-compose*.yml
 
-# Coverage reports
+# Coverage
 htmlcov/
-.coverage
-.coverage.*
+.coverage*
 .cache
 nosetests.xml
 coverage.xml
@@ -55,5 +49,14 @@ coverage.xml
 # pytest
 .pytest_cache/
 
-# Jupyter Notebook
+# Jupyter
 .ipynb_checkpoints/
+
+# Env configs
+.env.local
+.env.development
+.env.production
+
+# Migrations (tùy chọn, uncomment nếu muốn bỏ qua)
+# **/migrations/*.py
+# !**/migrations/__init__.py
