@@ -43,7 +43,7 @@ export function Sidebar({
 
   const baseLinks: NavLink[] = [
     {
-      label: "Trang chủ",
+      label: "Tổng quan",
       href: "/dashboard",
       icon: <Home size={16} />,
     },
