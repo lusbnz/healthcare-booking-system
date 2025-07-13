@@ -17,6 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const loginSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
@@ -27,6 +29,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -58,11 +62,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
       <div className="hidden md:block relative">
+        {!isImageLoaded && <Skeleton className="w-full h-full rounded-none" />}
         <Image
           src="/login_banner.jpg"
           alt="Login Illustration"
           fill
-          className="object-cover"
+          className={`object-cover transition-opacity duration-300 ${
+            isImageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => setIsImageLoaded(true)}
           priority
         />
       </div>

@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const registerSchema = z.object({
   full_name: z.string().min(2, "Vui lòng nhập họ tên"),
@@ -37,6 +39,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -71,11 +75,15 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
       <div className="hidden md:block relative">
+        {!isImageLoaded && <Skeleton className="w-full h-full rounded-none" />}
         <Image
           src="/register_banner.jpg"
           alt="Register Illustration"
           fill
-          className="object-cover"
+          className={`object-cover transition-opacity duration-300 ${
+            isImageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => setIsImageLoaded(true)}
           priority
         />
       </div>
