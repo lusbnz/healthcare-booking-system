@@ -1,7 +1,5 @@
-export function getCurrentUser() {
-    return {
-      id: "123",
-      full_name: "Nguyễn Văn A",
-      role: "patient", // "doctor", "admin", "patient"
-    };
-  }
+export function useCurrentUser() {
+  if (typeof window === "undefined") return null;
+  const stored = localStorage.getItem("currentUser");
+  return stored ? JSON.parse(stored) : null;
+}

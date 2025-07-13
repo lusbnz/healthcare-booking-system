@@ -5,14 +5,14 @@ import { Sidebar } from "@/components/common/sidebar";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
-import { getCurrentUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = getCurrentUser();
+  const user = useCurrentUser();
 
   const [isMobile, setIsMobile] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -30,11 +30,11 @@ export default function DashboardLayout({
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {!isMobile && <Sidebar role={user.role} collapsed={isCollapsed} />}
+      {!isMobile && <Sidebar role={user?.role} collapsed={isCollapsed} />}
 
       {isMobile && (
         <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-          <Sidebar role={user.role} collapsed={false} isOverlay />
+          <Sidebar role={user?.role} collapsed={false} isOverlay />
         </Dialog>
       )}
 

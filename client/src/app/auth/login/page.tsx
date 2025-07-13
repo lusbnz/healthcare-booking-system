@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+// import { api } from "@/lib/api";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -27,9 +27,14 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const getRoleFromEmail = (email: string): "patient" | "doctor" | "admin" => {
+  if (email === "doctor@demo.com") return "doctor";
+  if (email === "admin@demo.com") return "admin";
+  return "patient";
+};
+
 export default function LoginPage() {
   const router = useRouter();
-
   const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -42,10 +47,19 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (values) => {
     try {
-      await api("/api/users/login", {
-        method: "POST",
-        body: JSON.stringify(values),
-      });
+      // await api("/api/users/login", {
+      //   method: "POST",
+      //   body: JSON.stringify(values),
+      // });
+
+      const role = getRoleFromEmail(values.email);
+      const user = {
+        id: "123",
+        full_name: "Nguyễn Văn A",
+        role,
+      };
+
+      localStorage.setItem("currentUser", JSON.stringify(user));
 
       router.push("/dashboard");
     } catch (err) {
@@ -76,7 +90,7 @@ export default function LoginPage() {
       </div>
 
       <div className="flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-4">
+        <div className="w-full max-w-md space-y-6">
           <h1 className="text-2xl font-bold text-center">Đăng nhập</h1>
 
           <Form {...form}>
@@ -132,6 +146,24 @@ export default function LoginPage() {
               Đăng ký ngay
             </Link>
           </p>
+
+          <div className="mt-6 border-t pt-4 text-sm text-gray-600 space-y-1">
+            <p className="font-semibold text-center">Tài khoản demo:</p>
+            <ul className="space-y-1 text-center">
+              <li>
+                Doctor: <code>doctor@demo.com</code>
+              </li>
+              <li>
+                Patient: <code>patient@demo.com</code>
+              </li>
+              <li>
+                Admin: <code>admin@demo.com</code>
+              </li>
+              <li>
+                Mật khẩu: <code>demo123</code>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

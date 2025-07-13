@@ -27,13 +27,34 @@ import {
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const registerSchema = z.object({
-  full_name: z.string().min(2, "Vui lòng nhập họ tên"),
-  email: z.string().email("Email không hợp lệ"),
-  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
-  phone: z.string().min(8, "Số điện thoại không hợp lệ"),
-  role: z.enum(["patient", "doctor"]),
-});
+const registerSchema = z
+  .object({
+    full_name: z.string().min(2, "Vui lòng nhập họ tên"),
+    email: z.string().email("Email không hợp lệ"),
+    password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+    phone: z.string().min(8, "Số điện thoại không hợp lệ"),
+    role: z.enum(["patient", "doctor"]),
+    specialty: z.string().optional(),
+    experience_years: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === "doctor") {
+      if (!data.specialty || data.specialty.trim() === "") {
+        ctx.addIssue({
+          path: ["specialty"],
+          code: z.ZodIssueCode.custom,
+          message: "Vui lòng nhập chuyên khoa",
+        });
+      }
+      if (!data.experience_years || data.experience_years.trim() === "") {
+        ctx.addIssue({
+          path: ["experience_years"],
+          code: z.ZodIssueCode.custom,
+          message: "Vui lòng nhập số năm kinh nghiệm",
+        });
+      }
+    }
+  });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -71,6 +92,8 @@ export default function RegisterPage() {
       console.error("errorRegister", message);
     }
   };
+
+  const selectedRole = form.watch("role");
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
@@ -178,6 +201,42 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
+
+              {selectedRole === "doctor" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="specialty"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chuyên khoa</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Nội tiết, Tim mạch, Da liễu..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="experience_years"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Số năm kinh nghiệm</FormLabel>
+                        <FormControl>
+                          <Input placeholder="VD: 5" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
               <Button className="w-full" type="submit">
                 Đăng ký
               </Button>

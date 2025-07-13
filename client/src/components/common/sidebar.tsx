@@ -8,7 +8,7 @@ import {
   CalendarClock,
   Stethoscope,
   UserCog,
-  Settings,
+  Home,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -40,6 +40,14 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const baseLinks: NavLink[] = [
+    {
+      label: "Trang chủ",
+      href: "/dashboard",
+      icon: <Home size={16} />,
+    },
+  ];
 
   const patientLinks: NavLink[] = [
     {
@@ -90,12 +98,14 @@ export function Sidebar({
     },
   ];
 
-  const links =
+  const customLinks =
     role === "patient"
       ? patientLinks
       : role === "doctor"
       ? doctorLinks
       : adminLinks;
+
+  const links = [...baseLinks, ...customLinks];
 
   const SidebarContent = (
     <aside
@@ -115,7 +125,7 @@ export function Sidebar({
 
       <nav className="flex-1 space-y-1">
         {links.map((link) => {
-          const isActive = pathname.startsWith(link.href);
+          const isActive = pathname === link.href;
           return (
             <Link
               key={link.href}
@@ -156,13 +166,6 @@ export function Sidebar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-full">
-            <DropdownMenuItem
-              className="flex items-center gap-2"
-              onClick={() => router.push("/profile")}
-            >
-              <Settings size={16} />
-              Cài đặt
-            </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center gap-2 text-red-600"
               onClick={() => router.push("/auth/login")}
