@@ -60,7 +60,6 @@ export default function LoginPage() {
       };
 
       localStorage.setItem("currentUser", JSON.stringify(user));
-
       router.push("/dashboard");
     } catch (err) {
       const message =
@@ -74,14 +73,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-white">
       <div className="hidden md:block relative">
         {!isImageLoaded && <Skeleton className="w-full h-full rounded-none" />}
         <Image
           src="/login_banner.jpg"
           alt="Login Illustration"
           fill
-          className={`object-cover transition-opacity duration-300 ${
+          className={`object-cover transition-opacity duration-500 ${
             isImageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={() => setIsImageLoaded(true)}
@@ -89,9 +88,16 @@ export default function LoginPage() {
         />
       </div>
 
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md space-y-6">
-          <h1 className="text-2xl font-bold text-center">Đăng nhập</h1>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-2 text-primary">
+              Chào mừng trở lại 👋
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Đăng nhập để tiếp tục sử dụng nền tảng
+            </p>
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -137,30 +143,36 @@ export default function LoginPage() {
             </form>
           </Form>
 
-          <p className="text-center text-sm">
-            Chưa có tài khoản?{" "}
+          <p className="text-center text-sm text-muted-foreground">
+            Bạn chưa có tài khoản?{" "}
             <Link
               href="/auth/register"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline font-medium"
             >
               Đăng ký ngay
             </Link>
           </p>
 
-          <div className="mt-6 border-t pt-4 text-sm text-gray-600 space-y-1">
-            <p className="font-semibold text-center">Tài khoản demo:</p>
-            <ul className="space-y-1 text-center">
+          <div className="mt-6 border-t pt-4 text-sm text-gray-600 space-y-2 bg-muted/30 p-4 rounded-xl">
+            <p className="font-semibold text-center text-muted-foreground">
+              Tài khoản dùng thử
+            </p>
+            <ul className="grid grid-cols-1 gap-2 text-center text-xs sm:text-sm text-muted-foreground">
               <li>
-                Doctor: <code>doctor@demo.com</code>
+                <strong>Doctor:</strong>
+                <code>doctor@demo.com</code>
               </li>
               <li>
-                Patient: <code>patient@demo.com</code>
+                <strong>Patient:</strong>
+                <code>patient@demo.com</code>
               </li>
               <li>
-                Admin: <code>admin@demo.com</code>
+                <strong>Admin:</strong>
+                <code>admin@demo.com</code>
               </li>
               <li>
-                Mật khẩu: <code>demo123</code>
+                <strong>Mật khẩu:</strong>
+                <code>demo123</code>
               </li>
             </ul>
           </div>

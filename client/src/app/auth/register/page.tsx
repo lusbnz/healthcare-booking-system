@@ -60,7 +60,6 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-
   const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const form = useForm<RegisterFormValues>({
@@ -96,14 +95,14 @@ export default function RegisterPage() {
   const selectedRole = form.watch("role");
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-white">
       <div className="hidden md:block relative">
         {!isImageLoaded && <Skeleton className="w-full h-full rounded-none" />}
         <Image
           src="/register_banner.jpg"
           alt="Register Illustration"
           fill
-          className={`object-cover transition-opacity duration-300 ${
+          className={`object-cover transition-opacity duration-500 ${
             isImageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={() => setIsImageLoaded(true)}
@@ -111,9 +110,16 @@ export default function RegisterPage() {
         />
       </div>
 
-      <div className="flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-4">
-          <h1 className="text-2xl font-bold text-center">Đăng ký tài khoản</h1>
+      <div className="flex items-center justify-center p-6 md:p-12 bg-white">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-primary mb-2">
+              Tạo tài khoản mới
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Nhanh chóng, bảo mật và dễ sử dụng
+            </p>
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -203,7 +209,7 @@ export default function RegisterPage() {
               />
 
               {selectedRole === "doctor" && (
-                <>
+                <div className="space-y-4 animate-fade-in">
                   <FormField
                     control={form.control}
                     name="specialty"
@@ -234,7 +240,7 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
-                </>
+                </div>
               )}
 
               <Button className="w-full" type="submit">
@@ -243,9 +249,12 @@ export default function RegisterPage() {
             </form>
           </Form>
 
-          <p className="text-center text-sm">
+          <p className="text-center text-sm text-muted-foreground">
             Đã có tài khoản?{" "}
-            <Link href="/auth/login" className="text-blue-600 hover:underline">
+            <Link
+              href="/auth/login"
+              className="text-blue-600 hover:underline font-medium"
+            >
               Đăng nhập
             </Link>
           </p>
