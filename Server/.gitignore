@@ -5,7 +5,7 @@ __pycache__/
 
 # Virtualenv
 venv/
-.env  # file chứa biến môi trường
+.env
 
 # Django
 *.log
