@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from .serializers import MeSerializer
 
 from .serializers import RegisterSerializer, UserSerializer
 from .permissions import IsAdmin  # permission riêng cho admin
@@ -26,11 +27,16 @@ class RegisterView(generics.CreateAPIView):
 
 # Lấy thông tin user hiện tại
 class MeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        """
+        GET /api/users/me/
+        Trả về thông tin chung của user + nested profile nếu là doctor/patient.
+        """
+        serializer = MeSerializer(request.user, context={'request': request})
         return Response(serializer.data)
+    
 
 
 # Admin - danh sách bác sĩ
