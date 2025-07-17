@@ -8,11 +8,12 @@ User = get_user_model()
 
 class MeSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
+    fullname = serializers.CharField(source='get_full_name', read_only=True)
 
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'phone_number',
+            'id', 'username', 'fullname', 'email', 'phone_number',
             'user_type', 'profile'
         ]
 
