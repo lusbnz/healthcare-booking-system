@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from django.db.models import Count
 from rest_framework.request import Request          
 from users.models import User   
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import AppointmentFilter
 
 from users.permissions import IsPatient
 from appointments.models import Appointment
@@ -101,6 +103,9 @@ class PatientBookingCreateView(generics.CreateAPIView):
 class PatientAppointmentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsPatient]
     serializer_class = AppointmentSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AppointmentFilter
+
 
     def get_queryset(self):
         profile, _ = PatientProfile.objects.get_or_create(user=self.request.user)
