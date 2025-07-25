@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 export function RegisterForm({
   className,
@@ -69,9 +70,12 @@ export function RegisterForm({
               </div>
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <a href="/auth/login" className="underline underline-offset-4">
-                  Log in
-                </a>
+                <Link
+                  href={"/auth/login"}
+                  className="underline underline-offset-4"
+                >
+                   Log in
+                </Link>
               </div>
             </div>
           </form>
