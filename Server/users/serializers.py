@@ -8,7 +8,7 @@ User = get_user_model()
 
 class MeSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
-    fullname = serializers.CharField(source='get_full_name', read_only=True)
+    fullname = serializers.CharField(source='fullname')
 
     class Meta:
         model = User
