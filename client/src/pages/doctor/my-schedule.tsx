@@ -52,7 +52,9 @@ const initialAppointments: Appointment[] = [
 ];
 
 export default function MySchedulePage() {
-  const [date, setDate] = useState<Date | undefined>(new Date("2025-07-25T13:15:00+07:00"));
+  const [date, setDate] = useState<Date | undefined>(
+    new Date("2025-07-25T13:15:00+07:00")
+  );
   const [appointments] = useState<Appointment[]>(initialAppointments);
 
   // Lọc các lịch hẹn theo ngày được chọn
@@ -73,15 +75,20 @@ export default function MySchedulePage() {
       <div>
         <div className="font-medium">{appointment.patientName}</div>
         <div className="text-sm text-muted-foreground">
-          {format(appointment.date, "dd/MM/yyyy")} - {appointment.time} ({appointment.duration})
+          {format(appointment.date, "dd/MM/yyyy")} - {appointment.time} (
+          {appointment.duration})
         </div>
-        <div className="text-sm text-muted-foreground">{appointment.treatment}</div>
+        <div className="text-sm text-muted-foreground">
+          {appointment.treatment}
+        </div>
       </div>
       <div className="text-right">
         <div
           className={cn(
             "text-sm",
-            appointment.status === "Đã xác nhận" ? "text-green-600" : "text-yellow-600"
+            appointment.status === "Đã xác nhận"
+              ? "text-green-600"
+              : "text-yellow-600"
           )}
         >
           {appointment.status}
@@ -191,22 +198,20 @@ export default function MySchedulePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-4">
+              <h3 className="text-lg font-semibold mb-4">
+                {date
+                  ? `Lịch hẹn ngày ${format(date, "dd/MM/yyyy")}`
+                  : "Tất cả lịch hẹn"}
+              </h3>
+              {filteredAppointments.length > 0 ? (
+                filteredAppointments.map(renderAppointment)
+              ) : (
+                <p className="text-muted-foreground">
                   {date
-                    ? `Lịch hẹn ngày ${format(date, "dd/MM/yyyy")}`
-                    : "Tất cả lịch hẹn"}
-                </h3>
-                {filteredAppointments.length > 0 ? (
-                  filteredAppointments.map(renderAppointment)
-                ) : (
-                  <p className="text-muted-foreground">
-                    {date
-                      ? "Không có lịch hẹn trong ngày này."
-                      : "Không có lịch hẹn nào."}
-                  </p>
-                )}
-              </div>
+                    ? "Không có lịch hẹn trong ngày này."
+                    : "Không có lịch hẹn nào."}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

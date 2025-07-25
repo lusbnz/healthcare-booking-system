@@ -27,7 +27,7 @@ const doctorSidebar = {
     },
     {
       title: "Partients",
-      url: "/doctor/patients",
+      url: "/doctor/list-patient",
       icon: IconUsers,
     },
     {
