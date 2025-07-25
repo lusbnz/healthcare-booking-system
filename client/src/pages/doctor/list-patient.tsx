@@ -122,7 +122,7 @@ export default function ListPatientPage() {
         <SiteHeader />
         <div className="p-6 space-y-4">
           <h1 className="text-2xl font-semibold">Danh Sách Bệnh Nhân</h1>
-          <DataTable columns={columns} data={patients} loading={loading} />
+          <DataTable columns={columns} data={patients} loading={loading} isShowConfig={true}/>
         </div>
       </SidebarInset>
     </SidebarProvider>
