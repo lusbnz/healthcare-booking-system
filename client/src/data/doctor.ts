@@ -17,22 +17,22 @@ const doctorSidebar = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/doctor/dashboard",
       icon: IconDashboard,
     },
     {
       title: "Availibity",
-      url: "/availability",
+      url: "/doctor/availability",
       icon: IconCalendarClock,
     },
     {
       title: "Partients",
-      url: "/patients",
+      url: "/doctor/patients",
       icon: IconUsers,
     },
     {
       title: "My Schedule",
-      url: "/my-schedule",
+      url: "/doctor/my-schedule",
       icon: IconCalendarWeek,
     },
   ],
