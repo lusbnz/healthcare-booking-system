@@ -7,8 +7,7 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 
-export 
-const doctorSidebar = {
+export const doctorSidebar = {
   user: {
     name: "Quoc Viet",
     email: "quocviet@gmail.com",

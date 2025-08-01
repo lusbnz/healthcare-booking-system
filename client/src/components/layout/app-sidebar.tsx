@@ -13,6 +13,7 @@ import {
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import { doctorSidebar } from "@/data/doctor";
+import { patientSidebar } from "@/data/patient";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
