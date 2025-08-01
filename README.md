@@ -14,7 +14,7 @@
 
 ### Database
 
-- MySQL
+- PostgreSQL
 
 
 ## Tổng quan dự án (SaaS)
