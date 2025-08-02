@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { GuestRoute } from "@/lib/auth";
+import { ButtonLoading } from "../ui/button-loading";
 
 export function LoginForm({
   className,
@@ -21,14 +22,19 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
     try {
       await login({ username: email, password });
     } catch (err) {
       setError("Invalid credentials");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -53,6 +59,7 @@ export function LoginForm({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="grid gap-3">
@@ -71,12 +78,17 @@ export function LoginForm({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   {error && <p className="text-red-500 text-sm">{error}</p>}
-                  <Button type="submit" className="w-full">
-                    Login
-                  </Button>
+                  {isLoading ? (
+                    <ButtonLoading />
+                  ) : (
+                    <Button type="submit" className="w-full">
+                      Login
+                    </Button>
+                  )}
                 </div>
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}

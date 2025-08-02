@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { GuestRoute } from "@/lib/auth";
+import { ButtonLoading } from "../ui/button-loading";
 
 export function RegisterForm({
   className,
@@ -26,6 +27,7 @@ export function RegisterForm({
     user_type: "patient" as "doctor" | "patient",
   });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,6 +36,8 @@ export function RegisterForm({
       setError("Passwords do not match");
       return;
     }
+    setIsLoading(true);
+    setError("");
     try {
       await register({
         username: formData.username,
@@ -43,6 +47,8 @@ export function RegisterForm({
       });
     } catch (err) {
       setError("Registration failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,6 +78,7 @@ export function RegisterForm({
                       value={formData.username}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="grid gap-3">
@@ -84,6 +91,7 @@ export function RegisterForm({
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="grid gap-3">
@@ -96,6 +104,7 @@ export function RegisterForm({
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="grid gap-3">
@@ -108,6 +117,7 @@ export function RegisterForm({
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="grid gap-3">
@@ -119,15 +129,20 @@ export function RegisterForm({
                       onChange={handleChange}
                       className="border rounded-md p-2"
                       required
+                      disabled={isLoading}
                     >
                       <option value="patient">Patient</option>
                       <option value="doctor">Doctor</option>
                     </select>
                   </div>
                   {error && <p className="text-red-500 text-sm">{error}</p>}
-                  <Button type="submit" className="w-full">
-                    Sign Up
-                  </Button>
+                  {isLoading ? (
+                    <ButtonLoading />
+                  ) : (
+                    <Button type="submit" className="w-full">
+                      Sign Up
+                    </Button>
+                  )}
                 </div>
                 <div className="text-center text-sm">
                   Already have an account?{" "}

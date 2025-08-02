@@ -24,7 +24,7 @@ import {
       },
       {
         title: "Lịch Hẹn",
-        url: "/patient/schedule",
+        url: "/patient/my-schedule",
         icon: IconCalendarEvent,
       },
       {

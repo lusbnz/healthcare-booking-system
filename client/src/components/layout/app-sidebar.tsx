@@ -34,10 +34,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={doctorSidebar.navMain} />
+        <NavMain items={patientSidebar.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={doctorSidebar.user} />
+        <NavUser user={patientSidebar.user} />
       </SidebarFooter>
     </Sidebar>
   );
