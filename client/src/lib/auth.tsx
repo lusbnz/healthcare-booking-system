@@ -4,6 +4,8 @@ import { setTokens, getAccessToken } from '@/lib/client';
 import { ILoginResponse, IRegisterPayload, IUserProfile } from '@/dto/users';
 import { getUserProfile, loginUser, registerUser } from '@/api/users';
 
+
+
 interface AuthContextType {
   user: IUserProfile | null;
   isLoading: boolean;
