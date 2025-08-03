@@ -26,6 +26,11 @@ from records.models import MedicalRecord
 from records.serializers import MedicalRecordSerializer
 from notifications.models import Notification
 from rest_framework.exceptions import PermissionDenied
+from rest_framework import generics, permissions
+from users.permissions import IsPatient
+from django.contrib.auth import get_user_model
+from users.serializers import DoctorForPatientSerializer
+
 
 from typing import cast
 
@@ -79,20 +84,37 @@ class PatientDashboardView(APIView):
         })
 
 
+# class PatientDoctorListView(generics.ListAPIView):
+#     permission_classes = [permissions.IsAuthenticated, IsPatient]
+#     serializer_class = DoctorProfileSerializer
+
+#     def get_queryset(self):
+#         qs = DoctorProfile.objects.all()
+#         specialty = self.request.query_params.get('specialty')
+#         city = self.request.query_params.get('city')
+#         if specialty:
+#             # specialty là CharField trên DoctorProfile
+#             qs = qs.filter(specialty__icontains=specialty)
+#         if city:
+#             # giả sử city nằm trong address
+#             qs = qs.filter(address__icontains=city)
+#         return qs
+
 class PatientDoctorListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsPatient]
-    serializer_class = DoctorProfileSerializer
+    serializer_class   = DoctorForPatientSerializer
 
     def get_queryset(self):
-        qs = DoctorProfile.objects.all()
+        qs = User.objects.filter(user_type='doctor')
         specialty = self.request.query_params.get('specialty')
-        city = self.request.query_params.get('city')
+        city      = self.request.query_params.get('city')
+
+        # Chỉ lọc những doctor đã có doctor_profile nếu cần filter theo specialty hoặc address
         if specialty:
-            # specialty là CharField trên DoctorProfile
-            qs = qs.filter(specialty__icontains=specialty)
+            qs = qs.filter(doctor_profile__specialty__icontains=specialty)
         if city:
-            # giả sử city nằm trong address
-            qs = qs.filter(address__icontains=city)
+            qs = qs.filter(doctor_profile__address__icontains=city)
+
         return qs
 
 

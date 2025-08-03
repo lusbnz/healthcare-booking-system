@@ -5,8 +5,8 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
-    # fullname     = serializers.CharField(source='user.get_full_name')
-    fullname = serializers.CharField()
+    # fullname = serializers.CharField()
+    fullname = serializers.CharField(source='user.fullname')
     email        = serializers.EmailField(source='user.email')
     phone_number = serializers.CharField(source='user.phone_number')
     specialty      = serializers.CharField()
@@ -57,12 +57,12 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         profile_data = validated_data
-
         user = instance.user
 
         # Ghi fullname nếu có
         if 'fullname' in self.initial_data:
-            user.fullname = self.initial_data['fullname']  # dùng setter bạn đã định nghĩa
+            # user.fullname = self.initial_data['fullname']  # dùng setter bạn đã định nghĩa
+            user.fullname = user_data.get('fullname', user.fullname)
         if 'email' in user_data:
             user.email = user_data['email']
         if 'phone_number' in user_data:
