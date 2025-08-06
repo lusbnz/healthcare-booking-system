@@ -19,7 +19,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +30,7 @@ export function LoginForm({
     setIsLoading(true);
     setError("");
     try {
-      await login({ username: email, password });
+      await login({ username: username, password });
     } catch (err) {
       setError("Invalid credentials");
     } finally {
@@ -51,13 +51,13 @@ export function LoginForm({
               <div className="grid gap-6">
                 <div className="grid gap-6">
                   <div className="grid gap-3">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="username">Username</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="username"
+                      placeholder="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       disabled={isLoading}
                     />
@@ -65,12 +65,6 @@ export function LoginForm({
                   <div className="grid gap-3">
                     <div className="flex items-center">
                       <Label htmlFor="password">Password</Label>
-                      <a
-                        href="#"
-                        className="ml-auto text-sm underline-offset-4 hover:underline"
-                      >
-                        Forgot your password?
-                      </a>
                     </div>
                     <Input
                       id="password"
@@ -104,8 +98,7 @@ export function LoginForm({
           </CardContent>
         </Card>
         <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-          By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-          and <a href="#">Privacy Policy</a>.
+          Created by Lusbnz.
         </div>
       </div>
     </GuestRoute>

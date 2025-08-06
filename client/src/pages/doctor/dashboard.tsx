@@ -13,7 +13,7 @@ import { ProtectedRoute } from "@/lib/auth";
 
 export default function Page() {
   return (
-    // <ProtectedRoute>
+    <ProtectedRoute>
       <SidebarProvider
         style={
           {
@@ -41,6 +41,6 @@ export default function Page() {
           </div>
         </SidebarInset>
       </SidebarProvider>
-    // </ProtectedRoute>
+    </ProtectedRoute>
   );
 }

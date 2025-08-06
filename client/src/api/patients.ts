@@ -17,9 +17,9 @@ export async function updateAppointment(id: number, payload: {
     phone_number: string | null
     user_type: "doctor" | "patient"
     profile: null | {
-      address: string
-      date_of_birth: string
-      insurance_number: string
+      address: string | null
+      date_of_birth: string | null
+      insurance_number: string | null
     }
 }) {
     const res = await api.put(`/patients/appointments/${id}/`, payload)
@@ -39,9 +39,9 @@ export async function updatePatientProfile(payload: {
     phone_number: string | null
     user_type: "doctor" | "patient"
     profile: null | {
-      address: string
-      date_of_birth: string
-      insurance_number: string
+        address: string | null
+        date_of_birth: string | null
+        insurance_number: string | null
     }
 }) {
     const res = await api.put("/patients/profile/", payload)

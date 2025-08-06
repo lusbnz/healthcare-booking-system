@@ -14,8 +14,12 @@ import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import { doctorSidebar } from "@/data/doctor";
 import { patientSidebar } from "@/data/patient";
+import { useAuth } from "@/lib/auth";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth();
+  if (!user) return;
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -34,10 +38,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={patientSidebar.navMain} />
+        <NavMain items={user.user_type === 'doctor' ? doctorSidebar.navMain : patientSidebar.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={patientSidebar.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

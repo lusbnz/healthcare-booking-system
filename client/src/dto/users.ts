@@ -38,8 +38,11 @@ export interface IUserProfile {
     phone_number: string | null
     user_type: "doctor" | "patient"
     profile: null | {
+      fullname?: string
+      email?: string
+      phone_number?: string | null
       address: string
-      date_of_birth: string
-      insurance_number: string
+      specialty: string
+      liscense_number: string
     }
 }
