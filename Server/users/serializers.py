@@ -6,9 +6,28 @@ from doctors.serializers import DoctorProfileSerializer
 
 User = get_user_model()
 
+class DoctorForPatientSerializer(serializers.ModelSerializer):
+    # Lấy thông tin profile nếu có
+    profile = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'phone_number',
+            'profile',
+        ]
+
+    def get_profile(self, user):
+        # Nếu doctor_profile tồn tại, serialize nó
+        prof = getattr(user, 'doctor_profile', None)
+        return DoctorProfileSerializer(prof).data if prof else {}
+
 class MeSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
-    fullname = serializers.CharField(source='get_full_name', read_only=True)
+    fullname = serializers.CharField()
 
     class Meta:
         model = User
@@ -46,4 +65,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             user_type=validated_data.get('user_type', 'patient')
         )
+
+        if user.user_type == 'doctor':
+            from doctors.models import DoctorProfile
+            DoctorProfile.objects.create(user=user)
+        elif user.user_type == 'patient':
+            from patients.models import PatientProfile
+            PatientProfile.objects.create(user=user)
+
         return user

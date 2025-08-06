@@ -1,10 +1,20 @@
-# doctors/urls.py
-from django.urls import path
-from .views import DoctorProfileUpdateView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import DoctorMeView, AvailabilityListCreateView, AvailabilityDetailView
+from appointments.views import AppointmentViewSet
+from records.views      import MedicalRecordViewSet
+
+router = DefaultRouter()
+# appointments (dùng chính ViewSet đã mở rộng)
+router.register(r'appointments', AppointmentViewSet, basename='appointments')
+# medical records
+router.register(r'records',      MedicalRecordViewSet, basename='records')
 
 urlpatterns = [
-    # endpoint cho doctor tự xem / cập nhật profile
-    path('profile/', DoctorProfileUpdateView.as_view(), name='doctor-me-profile'),
-    # endpoint cho admin list toàn bộ doctors
-    # path('admin/', DoctorListView.as_view(), name='admin-doctors'),
+    path('profile/',        DoctorMeView.as_view(),                  name='doctor-me'),
+    path('availability/',      AvailabilityListCreateView.as_view(),   name='availability-list'),
+    path('availability/<int:id>/', AvailabilityDetailView.as_view(),   name='availability-detail'),
+
+    # nối luôn router
+    path('', include(router.urls)),
 ]
