@@ -1,22 +1,41 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import axios from "axios";
+import { getAccessToken, refreshAccessToken } from "./client";
 
-export async function api<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const res = await fetch(`${API_URL}/api/${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    credentials: "include",
-  });
+const api = axios.create({
+  baseURL: `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`,
+  withCredentials: true,
+});
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "API error");
+api.interceptors.request.use(
+  async (config) => {
+    const token = getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        await refreshAccessToken();
+        const newToken = getAccessToken();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
   }
+);
 
-  return res.json();
-}
+export default api;
