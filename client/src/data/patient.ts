@@ -22,10 +22,10 @@ import {
         url: "/patient/my-schedule",
         icon: IconCalendarEvent,
       },
-      {
-        title: "Hồ Sơ Y Tế",
-        url: "/patient/medical-records",
-        icon: IconFileText,
-      },
+      // {
+      //   title: "Hồ Sơ Y Tế",
+      //   url: "/patient/medical-records",
+      //   icon: IconFileText,
+      // },
     ],
   }

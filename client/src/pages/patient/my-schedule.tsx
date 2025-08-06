@@ -9,121 +9,199 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
-import { useState } from "react";
-import { useAuth } from "@/lib/auth";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatCard, StatCardProps } from "@/components/common/stat-card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
+import { format, isBefore } from "date-fns";
+import { vi } from "date-fns/locale";
+import {
+  getAppointments,
+  getDoctorsForPatients,
+  updateAppointment,
+  getAppointmentDetail, // Import the API function
+} from "@/api/patients";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"; // Import shadcn/ui Dialog components
+
+type ApiAppointment = {
+  id: number;
+  patient: number;
+  doctor: number;
+  timeslot: string;
+  reason: string;
+  status: "pending" | "confirm" | "cancelled";
+  created_at: string;
+  updated_at: string;
+};
 
 type Appointment = {
   id: number;
   doctorName: string;
+  patient: number;
+  doctor: number;
   date: string;
   time: string;
   location: string;
+  timeslot: string;
   phone: string;
-  status: "Sắp tới" | "Đã hoàn thành" | "Chờ xác nhận" | "Đã hủy";
-  fee: number;
-  notes?: string;
+  status: "pending" | "confirm" | "cancelled";
+  reason: string;
 };
 
-const initialAppointments: Appointment[] = [
-  {
-    id: 1,
-    doctorName: "Nguyễn Văn A",
-    date: "28/01/2025",
-    time: "09:00",
-    location: "Phòng 201, Tầng 2",
-    phone: "024-369-8731",
-    status: "Sắp tới",
-    fee: 500000,
-    notes: "Triều chứng: Kiểm tra huyết áp, theo dõi điều trị. Ghi chú: Mang theo kết quả xét nghiệm máu gần nhất",
-  },
-  {
-    id: 2,
-    doctorName: "Trần Thị B",
-    date: "30/01/2025",
-    time: "14:30",
-    location: "Phòng 105, Tầng 1",
-    phone: "028-385-4269",
-    status: "Chờ xác nhận",
-    fee: 400000,
-    notes: "Triều chứng: Khám sức khỏe tổng quát. Ghi chú: Nhịn ăn 8 tiếng trước khám",
-  },
-  {
-    id: 3,
-    doctorName: "Lê Văn C",
-    date: "02/02/2025",
-    time: "10:15",
-    location: "Phòng 301, Tầng 3",
-    phone: "024-369-8731",
-    status: "Đã hoàn thành",
-    fee: 500000,
-  },
-  {
-    id: 4,
-    doctorName: "Phạm Thị D",
-    date: "01/02/2025",
-    time: "10:00",
-    location: "Phòng 101, Tầng 1",
-    phone: "024-369-8731",
-    status: "Đã hủy",
-    fee: 450000,
-  },
-];
-
-const statCards: StatCardProps[] = [
-  {
-    title: "Sắp tới",
-    value: "3",
-    footerLabel: "Lịch hẹn trong tương lai",
-    className: "bg-green-50 hover:shadow-lg transition-shadow",
-  },
-  {
-    title: "Đã hoàn thành",
-    value: "1",
-    footerLabel: "Lịch hẹn đã khám",
-    className: "bg-blue-50 hover:shadow-lg transition-shadow",
-  },
-  {
-    title: "Chờ xác nhận",
-    value: "1",
-    footerLabel: "Lịch hẹn đang chờ",
-    className: "bg-yellow-50 hover:shadow-lg transition-shadow",
-  },
-  {
-    title: "Đã hủy",
-    value: "1",
-    footerLabel: "Lịch hẹn bị hủy",
-    className: "bg-red-50 hover:shadow-lg transition-shadow",
-  },
-];
+type Doctor = {
+  id: number;
+  username: string;
+  email: string;
+  phone_number: string | null;
+  profile: {
+    fullname?: string;
+    email?: string;
+    phone_number?: string;
+    specialty?: string;
+    address?: string;
+    license_number?: string;
+  };
+};
 
 export default function MySchedulePage() {
-  const [appointments, setAppointments] = useState(initialAppointments);
-//   const { cancelAppointment } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<ApiAppointment | null>(null); // State for selected appointment details
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // State for dialog open/close
   const router = useRouter();
 
-  const handleCancelAppointment = async (appointmentId: number) => {
-    // try {
-    //   await cancelAppointment(appointmentId);
-    //   setAppointments(appointments.filter((a) => a.id !== appointmentId));
-    // } catch (error) {
-    //   console.error("Cancellation failed:", error);
-    // }
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const doctorList: Doctor[] = await getDoctorsForPatients();
+        setDoctors(doctorList);
+      } catch (error) {
+        console.error("Failed to fetch doctors:", error);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const apiAppointments: ApiAppointment[] = await getAppointments("");
+        const mappedAppointments = await Promise.all(
+          apiAppointments.map(async (appt) => {
+            const doctorDetails = doctors?.find(
+              (doctor) => doctor.id === appt.doctor
+            );
+            const timeslot = new Date(appt.timeslot);
+            return {
+              id: appt.id,
+              doctorName: doctorDetails?.username,
+              doctor: appt.doctor,
+              patient: appt.patient,
+              date: format(timeslot, "dd/MM/yyyy", { locale: vi }),
+              time: format(timeslot, "HH:mm", { locale: vi }),
+              location: doctorDetails?.profile.address,
+              phone: doctorDetails?.phone_number,
+              status: appt.status,
+              reason: appt.reason,
+              timeslot: appt.timeslot,
+            } as Appointment;
+          })
+        );
+        setAppointments(mappedAppointments);
+      } catch (error) {
+        console.error("Failed to fetch appointments:", error);
+      }
+    };
+
+    fetchAppointments();
+  }, [doctors]);
+
+  const statCards: StatCardProps[] = [
+    {
+      title: "Đã xác nhận",
+      value: appointments
+        .filter((appt) => appt.status === "confirm")
+        .length.toString(),
+      footerLabel: "Lịch hẹn đã xác nhận",
+      className: "bg-blue-50 hover:shadow-lg transition-shadow",
+    },
+    {
+      title: "Chờ xác nhận",
+      value: appointments
+        .filter((appt) => appt.status === "pending")
+        .length.toString(),
+      footerLabel: "Lịch hẹn đang chờ",
+      className: "bg-yellow-50 hover:shadow-lg transition-shadow",
+    },
+    {
+      title: "Đã hủy",
+      value: appointments
+        .filter((appt) => appt.status === "cancelled")
+        .length.toString(),
+      footerLabel: "Lịch hẹn bị hủy",
+      className: "bg-red-50 hover:shadow-lg transition-shadow",
+    },
+  ];
+
+  const handlecancelledAppointment = async (appointment: Appointment) => {
+    try {
+      await updateAppointment(appointment.id, {
+        id: appointment.id,
+        patient: appointment.patient,
+        doctor: appointment.doctor,
+        status: "cancelled",
+        timeslot: appointment.timeslot,
+        reason: appointment.reason,
+      });
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === appointment.id ? { ...appt, status: "cancelled" } : appt
+        )
+      );
+    } catch (error) {
+      console.error("Cancellation failed:", error);
+      alert("Hủy lịch thất bại. Vui lòng thử lại.");
+    }
   };
 
-  const handleViewDetails = (appointmentId: number) => {
-    router.push(`/patient/appointment-detail?id=${appointmentId}`);
+  const handleViewDetails = async (appointmentId: number) => {
+    try {
+      const appointmentDetails: ApiAppointment = await getAppointmentDetail(
+        appointmentId
+      );
+      setSelectedAppointment(appointmentDetails);
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch appointment details:", error);
+      alert("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.");
+    }
   };
 
   const filterAppointmentsByStatus = (status: string) => {
-    if (status === "Đã khám") return appointments.filter(a => a.status === "Đã hoàn thành");
     if (status === "All") return appointments;
-    return appointments.filter(a => a.status === status);
+    if (status === "Sắp tới") {
+      return appointments.filter(
+        (appt) =>
+          appt.status === "confirm" &&
+          isBefore(
+            new Date(),
+            new Date(appt.date.split("/").reverse().join("-"))
+          )
+      );
+    }
+    return appointments.filter((appt) => appt.status === status);
   };
 
   return (
@@ -147,7 +225,10 @@ export default function MySchedulePage() {
               ))}
             </div>
             <div className="flex justify-end">
-              <Button variant="outline" onClick={() => router.push("/patient/find-doctor")}>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/patient/find-doctor")}
+              >
                 <Calendar className="mr-2 h-4 w-4" /> Đặt lịch mới
               </Button>
             </div>
@@ -155,240 +236,153 @@ export default function MySchedulePage() {
 
           <Tabs defaultValue="All" className="w-full">
             <TabsList className="flex justify-start gap-2 bg-muted p-1 rounded-md">
-              <TabsTrigger value="All" className="flex-1">Tất cả</TabsTrigger>
-              <TabsTrigger value="Sắp tới" className="flex-1">Sắp tới</TabsTrigger>
-              <TabsTrigger value="Đã khám" className="flex-1">Đã khám</TabsTrigger>
-              <TabsTrigger value="Đã hủy" className="flex-1">Đã hủy</TabsTrigger>
+              <TabsTrigger value="All" className="flex-1">
+                Tất cả
+              </TabsTrigger>
+              <TabsTrigger value="confirm" className="flex-1">
+                Đã xác nhận
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="flex-1">
+                Chờ xác nhận
+              </TabsTrigger>
+              <TabsTrigger value="cancelled" className="flex-1">
+                Huỷ bỏ
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="All">
-              <div className="space-y-4">
-                {filterAppointmentsByStatus("All").map((appointment) => (
-                  <Card key={appointment.id} className="shadow-md hover:shadow-lg transition-shadow">
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={`https://i.pravatar.cc/100?img=${appointment.id}`}
-                          alt={appointment.doctorName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <CardTitle className="text-md">{appointment.doctorName}</CardTitle>
-                          <CardDescription className="text-sm">
-                            {appointment.date} {appointment.time}
-                          </CardDescription>
+            {["All", "confirm", "pending", "cancelled"].map((tab) => (
+              <TabsContent key={tab} value={tab}>
+                <div className="space-y-4">
+                  {filterAppointmentsByStatus(tab).map((appointment) => (
+                    <Card
+                      key={appointment.id}
+                      className="shadow-md hover:shadow-lg transition-shadow"
+                    >
+                      <CardHeader className="flex flex-row items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={`https://i.pravatar.cc/100?img=${appointment.id}`}
+                            alt={appointment.doctorName}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div>
+                            <CardTitle className="text-md">
+                              {appointment.doctorName}
+                            </CardTitle>
+                            <CardDescription className="text-sm">
+                              {appointment.date} {appointment.time}
+                            </CardDescription>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{appointment.location}</p>
-                        <p className="text-xs text-muted-foreground">{appointment.phone}</p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex justify-between items-center mb-2">
-                        {appointment.status === "Sắp tới" && (
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            {appointment.status}
-                          </span>
-                        )}
-                        {appointment.status === "Chờ xác nhận" && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            {appointment.status}
-                          </span>
-                        )}
-                        {appointment.status === "Đã hoàn thành" && (
-                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            {appointment.status}
-                          </span>
-                        )}
-                        {appointment.status === "Đã hủy" && (
-                          <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            {appointment.status}
-                          </span>
-                        )}
-                        <span className="text-sm font-medium">
-                          Phí khám: {appointment.fee.toLocaleString("vi-VN")} VND
-                        </span>
-                      </div>
-                      {appointment.notes && (
-                        <p className="text-sm text-muted-foreground mb-2">{appointment.notes}</p>
-                      )}
-                      <div className="flex gap-2">
-                        {appointment.status !== "Đã hủy" && appointment.status !== "Đã hoàn thành" && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleCancelAppointment(appointment.id)}
-                          >
-                            Hủy lịch
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(appointment.id)}
-                        >
-                          Xem chi tiết
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="Sắp tới">
-              <div className="space-y-4">
-                {filterAppointmentsByStatus("Sắp tới").map((appointment) => (
-                  <Card key={appointment.id} className="shadow-md hover:shadow-lg transition-shadow">
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={`https://i.pravatar.cc/100?img=${appointment.id}`}
-                          alt={appointment.doctorName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <CardTitle className="text-md">{appointment.doctorName}</CardTitle>
-                          <CardDescription className="text-sm">
-                            {appointment.date} {appointment.time}
-                          </CardDescription>
+                        <div className="text-right">
+                          {appointment.status === "pending" && (
+                            <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                              {appointment.status}
+                            </span>
+                          )}
+                          {appointment.status === "confirm" && (
+                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                              {appointment.status}
+                            </span>
+                          )}
+                          {appointment.status === "cancelled" && (
+                            <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                              {appointment.status}
+                            </span>
+                          )}
+                          <p className="text-sm text-muted-foreground my-2">
+                            Lý do: {appointment.reason}
+                          </p>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{appointment.location}</p>
-                        <p className="text-xs text-muted-foreground">{appointment.phone}</p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          {appointment.status}
-                        </span>
-                        <span className="text-sm font-medium">
-                          Phí khám: {appointment.fee.toLocaleString("vi-VN")} VND
-                        </span>
-                      </div>
-                      {appointment.notes && (
-                        <p className="text-sm text-muted-foreground mb-2">{appointment.notes}</p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleCancelAppointment(appointment.id)}
-                        >
-                          Hủy lịch
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(appointment.id)}
-                        >
-                          Xem chi tiết
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="Đã khám">
-              <div className="space-y-4">
-                {filterAppointmentsByStatus("Đã khám").map((appointment) => (
-                  <Card key={appointment.id} className="shadow-md hover:shadow-lg transition-shadow">
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={`https://i.pravatar.cc/100?img=${appointment.id}`}
-                          alt={appointment.doctorName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <CardTitle className="text-md">{appointment.doctorName}</CardTitle>
-                          <CardDescription className="text-sm">
-                            {appointment.date} {appointment.time}
-                          </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="flex gap-2">
+                          {appointment.status !== "cancelled" &&
+                            appointment.status !== "confirm" && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() =>
+                                  handlecancelledAppointment(appointment)
+                                }
+                              >
+                                Hủy lịch
+                              </Button>
+                            )}
+                          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewDetails(appointment.id)}
+                              >
+                                Xem chi tiết
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Chi tiết lịch hẹn</DialogTitle>
+                                <DialogDescription>
+                                  Thông tin chi tiết về lịch hẹn của bạn
+                                </DialogDescription>
+                              </DialogHeader>
+                              {selectedAppointment ? (
+                                <div className="space-y-4">
+                                  <p>
+                                    <strong>ID:</strong> {selectedAppointment.id}
+                                  </p>
+                                  <p>
+                                    <strong>Bác sĩ:</strong>{" "}
+                                    {
+                                      doctors.find(
+                                        (d) => d.id === selectedAppointment.doctor
+                                      )?.username
+                                    }
+                                  </p>
+                                  <p>
+                                    <strong>Thời gian:</strong>{" "}
+                                    {format(
+                                      new Date(selectedAppointment.timeslot),
+                                      "dd/MM/yyyy HH:mm",
+                                      { locale: vi }
+                                    )}
+                                  </p>
+                                  <p>
+                                    <strong>Lý do:</strong>{" "}
+                                    {selectedAppointment.reason}
+                                  </p>
+                                  <p>
+                                    <strong>Trạng thái:</strong>{" "}
+                                    {selectedAppointment.status}
+                                  </p>
+                                  <p>
+                                    <strong>Ngày tạo:</strong>{" "}
+                                    {format(
+                                      new Date(selectedAppointment.created_at),
+                                      "dd/MM/yyyy HH:mm",
+                                      { locale: vi }
+                                    )}
+                                  </p>
+                                  <p>
+                                    <strong>Ngày cập nhật:</strong>{" "}
+                                    {format(
+                                      new Date(selectedAppointment.updated_at),
+                                      "dd/MM/yyyy HH:mm",
+                                      { locale: vi }
+                                    )}
+                                  </p>
+                                </div>
+                              ) : (
+                                <p>Đang tải...</p>
+                              )}
+                            </DialogContent>
+                          </Dialog>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{appointment.location}</p>
-                        <p className="text-xs text-muted-foreground">{appointment.phone}</p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          {appointment.status}
-                        </span>
-                        <span className="text-sm font-medium">
-                          Phí khám: {appointment.fee.toLocaleString("vi-VN")} VND
-                        </span>
-                      </div>
-                      {appointment.notes && (
-                        <p className="text-sm text-muted-foreground mb-2">{appointment.notes}</p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(appointment.id)}
-                        >
-                          Xem chi tiết
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="Đã hủy">
-              <div className="space-y-4">
-                {filterAppointmentsByStatus("Đã hủy").map((appointment) => (
-                  <Card key={appointment.id} className="shadow-md hover:shadow-lg transition-shadow">
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={`https://i.pravatar.cc/100?img=${appointment.id}`}
-                          alt={appointment.doctorName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <CardTitle className="text-md">{appointment.doctorName}</CardTitle>
-                          <CardDescription className="text-sm">
-                            {appointment.date} {appointment.time}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{appointment.location}</p>
-                        <p className="text-xs text-muted-foreground">{appointment.phone}</p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          {appointment.status}
-                        </span>
-                        <span className="text-sm font-medium">
-                          Phí khám: {appointment.fee.toLocaleString("vi-VN")} VND
-                        </span>
-                      </div>
-                      {appointment.notes && (
-                        <p className="text-sm text-muted-foreground mb-2">{appointment.notes}</p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(appointment.id)}
-                        >
-                          Xem chi tiết
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            ))}
           </Tabs>
         </div>
       </SidebarInset>

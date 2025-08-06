@@ -10,16 +10,21 @@ export async function bookAppointment(payload: {
 }
   
 export async function updateAppointment(id: number, payload: {
-    id: number
-    username: string
-    fullname: string
-    email: string
-    phone_number: string | null
-    user_type: "doctor" | "patient"
-    profile: null | {
-      address: string | null
-      date_of_birth: string | null
-      insurance_number: string | null
+    id?: number
+    patient?: number
+    doctor?: number
+    username?: string
+    fullname?: string
+    email?: string
+    timeslot?: string
+    reason?: string
+    phone_number?: string | null
+    user_type?: "doctor" | "patient"
+    status?: string
+    profile?: null | {
+      address?: string | null
+      date_of_birth?: string | null
+      insurance_number?: string | null
     }
 }) {
     const res = await api.put(`/patients/appointments/${id}/`, payload)

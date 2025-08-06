@@ -17,123 +17,153 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star } from "lucide-react";
-import { useState } from "react";
-import { useAuth } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
+import { bookAppointment, getDoctorsForPatients } from "@/api/patients";
+import { useRouter } from "next/navigation";
+import { format, addHours, isBefore, startOfDay, addDays } from "date-fns";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Doctor = {
   id: number;
-  name: string;
-  specialty: string;
-  rating: number;
-  reviews: number;
-  hospital: string;
-  location: string;
-  availability: string[];
-  fee: number;
+  username: string;
+  email: string;
+  phone_number: string | null;
+  profile: {
+    fullname?: string;
+    email?: string;
+    phone_number?: string;
+    specialty?: string;
+    address?: string;
+    license_number?: string;
+  };
 };
 
-const initialDoctors: Doctor[] = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    specialty: "Bệnh viện Bạch Mai",
-    rating: 4.8,
-    reviews: 156,
-    hospital: "Bệnh viện Bạch Mai",
-    location: "Hà Nội",
-    availability: ["09:00-10:30", "14:00-15:30"],
-    fee: 600000,
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    specialty: "Bệnh viện Chợ Rẫy",
-    rating: 4.9,
-    reviews: 203,
-    hospital: "Bệnh viện Chợ Rẫy",
-    location: "TP. Hồ Chí Minh",
-    availability: ["09:00-10:30", "13:30-15:00"],
-    fee: 400000,
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    specialty: "Bệnh viện Đại học Y Hà Nội",
-    rating: 4.7,
-    reviews: 89,
-    hospital: "Bệnh viện Đại học Y Hà Nội",
-    location: "Hà Nội",
-    availability: ["10:00-11:30", "15:00-16:30"],
-    fee: 500000,
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    specialty: "Bệnh viện Nhi Trung ương",
-    rating: 4.9,
-    reviews: 267,
-    hospital: "Bệnh viện Nhi Trung ương",
-    location: "Hà Nội",
-    availability: ["08:30-10:00", "14:00-15:30"],
-    fee: 550000,
-  },
-];
+type Timeslot = {
+  startTime: string;
+  isAvailable: boolean;
+};
+
+async function getAvailableTimeslots(doctorId: number): Promise<Timeslot[]> {
+  const timeslots: Timeslot[] = [];
+  const now = new Date();
+  const startDate = startOfDay(now);
+
+  for (let day = 0; day < 7; day++) {
+    const currentDay = addDays(startDate, day);
+    for (let hour = 8; hour <= 17; hour++) {
+      const startTime = addHours(currentDay, hour);
+      if (isBefore(now, startTime)) {
+        timeslots.push({
+          startTime: startTime.toISOString(),
+          isAvailable: Math.random() > 0.3, 
+        });
+      }
+    }
+  }
+  return timeslots;
+}
 
 export default function FindDoctorPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [doctors, setDoctors] = useState(initialDoctors);
-  //   const { bookAppointment } = useAuth();
+  const [addressesFilter, setAddressesFilter] = useState("");
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
+  const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+  const [selectedTimeslot, setSelectedTimeslot] = useState<string>("");
+  const [reason, setReason] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const doctorList: Doctor[] = await getDoctorsForPatients();
+        setDoctors(doctorList);
+        setAllDoctors(doctorList);
+      } catch (error) {
+        console.error("Failed to fetch doctors:", error);
+      }
+    };
+    fetchDoctors();
+  }, []);
+
+  const specialties = Array.from(
+    new Set(allDoctors.map((doctor) => doctor.profile.specialty))
+  );
+  const addresses = Array.from(
+    new Set(allDoctors.map((doctor) => doctor.profile.address))
+  );
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    filterDoctors(e.target.value, specialtyFilter, locationFilter);
+    filterDoctors(e.target.value, specialtyFilter, addressesFilter);
   };
 
   const handleFilterChange = (
-    filterType: "specialty" | "location",
+    filterType: "specialty" | "address",
     value: string
   ) => {
     if (filterType === "specialty") setSpecialtyFilter(value);
-    if (filterType === "location") setLocationFilter(value);
+    if (filterType === "address") setAddressesFilter(value);
     filterDoctors(
       searchTerm,
-      value,
-      filterType === "location" ? value : locationFilter
+      filterType === "specialty" ? value : specialtyFilter,
+      filterType === "address" ? value : addressesFilter
     );
   };
 
   const filterDoctors = (
     search: string,
     specialty: string,
-    location: string
+    address: string
   ) => {
-    // let filtered = initialDoctors.filter((doctor) => {
-    //   const matchesSearch = doctor.name
-    //     .toLowerCase()
-    //     .includes(search.toLowerCase());
-    //   const matchesSpecialty = !specialty || doctor.specialty === specialty;
-    //   const matchesLocation = !location || doctor.location === location;
-    //   return matchesSearch && matchesSpecialty && matchesLocation;
-    // });
-    // setDoctors(filtered);
-    setDoctors(initialDoctors);
+    const filtered = allDoctors.filter((doctor) => {
+      const matchesSearch = doctor.username
+        .toLowerCase()
+        .includes(search.toLowerCase());
+      const matchesSpecialty = !specialty || specialty === "all" || doctor.profile.specialty === specialty;
+      const matchesAddress = !address || address === "all" || doctor.profile.address === address;
+      return matchesSearch && matchesSpecialty && matchesAddress;
+    });
+    setDoctors(filtered);
   };
 
   const handleBookAppointment = async (doctorId: number) => {
-    // try {
-    //   await bookAppointment(doctorId);
-    //   router.push("/patient/appointments");
-    // } catch (error) {
-    //   console.error("Booking failed:", error);
-    // }
+    setSelectedDoctorId(doctorId);
+    try {
+      const availableTimeslots = await getAvailableTimeslots(doctorId);
+      setTimeslots(availableTimeslots);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch timeslots:", error);
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedDoctorId || !selectedTimeslot || !reason) {
+      alert("Vui lòng chọn thời gian và nhập lý do khám.");
+      return;
+    }
+
+    try {
+      await bookAppointment({
+        doctor: selectedDoctorId,
+        timeslot: selectedTimeslot,
+        reason,
+      });
+      setIsModalOpen(false);
+      setSelectedTimeslot("");
+      setReason("");
+      router.push("/patient/my-schedule");
+    } catch (error) {
+      console.error("Booking failed:", error);
+      alert("Đặt lịch thất bại. Vui lòng thử lại.");
+    }
   };
 
   return (
@@ -176,30 +206,30 @@ export default function FindDoctorPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả chuyên khoa</SelectItem>
-                  <SelectItem value="Bệnh viện Bạch Mai">Bạch Mai</SelectItem>
-                  <SelectItem value="Bệnh viện Chợ Rẫy">Chợ Rẫy</SelectItem>
-                  <SelectItem value="Bệnh viện Đại học Y Hà Nội">
-                    ĐHYHN
-                  </SelectItem>
-                  <SelectItem value="Bệnh viện Nhi Trung ương">
-                    Nhi TW
-                  </SelectItem>
+                  {specialties.map((specialty) => (
+                    <SelectItem key={specialty} value={specialty!}>
+                      {specialty}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex-1">
-              <Label htmlFor="location">Tất cả địa điểm</Label>
+              <Label htmlFor="address">Tất cả địa điểm</Label>
               <Select
-                value={locationFilter}
-                onValueChange={(value) => handleFilterChange("location", value)}
+                value={addressesFilter}
+                onValueChange={(value) => handleFilterChange("address", value)}
               >
                 <SelectTrigger className="mt-1 w-full">
                   <SelectValue placeholder="Tất cả địa điểm" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả địa điểm</SelectItem>
-                  <SelectItem value="Hà Nội">Hà Nội</SelectItem>
-                  <SelectItem value="TP. Hồ Chí Minh">TP. HCM</SelectItem>
+                  {addresses.map((address) => (
+                    <SelectItem key={address} value={address!}>
+                      {address}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -214,55 +244,25 @@ export default function FindDoctorPage() {
                 <CardHeader className="flex flex-row items-center gap-4">
                   <img
                     src={`https://i.pravatar.cc/100?img=${doctor.id}`}
-                    alt={doctor.name}
+                    alt={doctor.username}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                   <div>
-                    <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                    <CardDescription>{doctor.specialty}</CardDescription>
+                    <CardTitle className="text-lg">{doctor.username}</CardTitle>
+                    <CardDescription>{doctor.email}</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center">
-                      {Array.from({ length: 5 }, (_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(doctor.rating)
-                              ? "text-yellow-400 fill-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {doctor.rating} ({doctor.reviews})
-                    </span>
-                  </div>
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Bệnh viện: {doctor.hospital}
+                      Chuyên khoa: {doctor.profile.specialty || "Chưa xác định"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Địa điểm: {doctor.location}
+                      Địa điểm: {doctor.profile.address || "Chưa xác định"}
                     </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Khung giờ còn trống:</p>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {doctor.availability.map((slot, index) => (
-                        <span
-                          key={index}
-                          className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full"
-                        >
-                          {slot}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-sm">
-                    Phí tư vấn: {doctor.fee.toLocaleString("vi-VN")} VND
+                    <p className="text-sm text-muted-foreground">
+                      Giấy phép: {doctor.profile.license_number || "Chưa xác định"}
+                    </p>
                   </div>
                   <Button
                     className="w-full"
@@ -275,6 +275,57 @@ export default function FindDoctorPage() {
             ))}
           </div>
         </div>
+
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Chọn thời gian đặt lịch</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="timeslot" className="mb-2">Thời gian</Label>
+                <Select
+                  value={selectedTimeslot}
+                  onValueChange={setSelectedTimeslot}
+                >
+                  <SelectTrigger id="timeslot">
+                    <SelectValue placeholder="Chọn thời gian" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeslots
+                      .filter((slot) => slot.isAvailable)
+                      .map((slot) => (
+                        <SelectItem
+                          key={slot.startTime}
+                          value={slot.startTime}
+                        >
+                          {format(new Date(slot.startTime), "dd/MM/yyyy HH:mm")}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="reason" className="mb-2">Lý do khám</Label>
+                <Input
+                  id="reason"
+                  placeholder="Nhập lý do khám..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button onClick={handleConfirmBooking}>Xác nhận</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </SidebarProvider>
   );
