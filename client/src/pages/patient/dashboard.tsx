@@ -89,13 +89,13 @@ export default function PatientDashboardPage() {
   const handleQuickActionClick = (title: string) => {
     switch (title) {
       case "Tìm Bác Sĩ":
-        router.push("patient/find-doctor");
+        router.push("/patient/find-doctor");
         break;
       case "Đặt Lịch Hẹn":
-        router.push("patient/book-appointment");
+        router.push("/patient/book-appointment");
         break;
       case "Xem Hồ Sơ":
-        router.push("patient/medical-records");
+        router.push("/patient/medical-records");
         break;
       default:
         break;
