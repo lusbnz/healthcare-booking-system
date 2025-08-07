@@ -16,7 +16,11 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ProtectedRoute, useAuth } from "@/lib/auth";
 import { useEffect, useState } from "react";
-import { getAppointments, getDoctorsForPatients, getPatientDashboard } from "@/api/patients";
+import {
+  getAppointments,
+  getDoctorsForPatients,
+  getPatientDashboard,
+} from "@/api/patients";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -146,7 +150,13 @@ export default function PatientDashboardPage() {
           {
             title: "Lịch hẹn sắp tới",
             value: dashboardData.upcoming_appointments.toString(),
-            badge: dashboardData.upcoming_appointments > 0 ? { value: `+${dashboardData.upcoming_appointments}`, trend: "up" } : undefined,
+            badge:
+              dashboardData.upcoming_appointments > 0
+                ? {
+                    value: `+${dashboardData.upcoming_appointments}`,
+                    trend: "up",
+                  }
+                : undefined,
             footerLabel: "Trong 7 ngày tới",
             className:
               "bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-shadow",
@@ -154,7 +164,13 @@ export default function PatientDashboardPage() {
           {
             title: "Thông báo chưa đọc",
             value: dashboardData.unread_notifications.toString(),
-            badge: dashboardData.unread_notifications > 0 ? { value: `+${dashboardData.unread_notifications}`, trend: "up" } : undefined,
+            badge:
+              dashboardData.unread_notifications > 0
+                ? {
+                    value: `+${dashboardData.unread_notifications}`,
+                    trend: "up",
+                  }
+                : undefined,
             footerLabel: "Thông báo mới",
             className:
               "bg-gradient-to-br from-yellow-50 to-white hover:shadow-lg transition-shadow",
@@ -315,6 +331,8 @@ export default function PatientDashboardPage() {
                             className={cn(
                               item.status === "confirm"
                                 ? "bg-green-100 text-green-800"
+                                : item.status === "cancelled"
+                                ? "bg-red-100 text-red-800"
                                 : "bg-yellow-100 text-yellow-800"
                             )}
                           >

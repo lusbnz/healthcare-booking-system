@@ -78,14 +78,17 @@ async function getAvailableTimeslots(doctorId: number): Promise<Timeslot[]> {
 
   const bookedTimeslots = bookedAppointments
     .filter((appt) => appt.status !== "cancelled")
-    .map((appt) => appt.timeslot);
+    .map((appt) => {
+      const date = new Date(appt.timeslot);
+      return date.toISOString().split(".")[0] + "Z";
+    });
 
   for (let day = 0; day < 7; day++) {
     const currentDay = addDays(startDate, day);
     for (let hour = 8; hour <= 17; hour++) {
       const startTime = addHours(currentDay, hour);
       if (isBefore(now, startTime)) {
-        const startTimeString = startTime.toISOString();
+        const startTimeString = startTime.toISOString().split(".")[0] + "Z";
         const isAvailable = !bookedTimeslots.includes(startTimeString);
         timeslots.push({
           startTime: startTimeString,
