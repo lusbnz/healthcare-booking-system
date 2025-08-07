@@ -21,7 +21,11 @@ import { useState, useEffect, useMemo } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
-import { bookAppointment, getDoctorsForPatients } from "@/api/patients";
+import {
+  bookAppointment,
+  getDoctorsForPatients,
+  getAppointments,
+} from "@/api/patients";
 import { useRouter } from "next/navigation";
 import { format, addHours, isBefore, startOfDay, addDays } from "date-fns";
 import {
@@ -31,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 type Doctor = {
   id: number;
@@ -52,19 +57,39 @@ type Timeslot = {
   isAvailable: boolean;
 };
 
+type Appointment = {
+  id: number;
+  patient: number;
+  doctor: number;
+  timeslot: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
 async function getAvailableTimeslots(doctorId: number): Promise<Timeslot[]> {
   const timeslots: Timeslot[] = [];
   const now = new Date();
   const startDate = startOfDay(now);
+
+  const query = `doctor=${doctorId}`;
+  const bookedAppointments: Appointment[] = await getAppointments(query);
+
+  const bookedTimeslots = bookedAppointments
+    .filter((appt) => appt.status !== "cancelled")
+    .map((appt) => appt.timeslot);
 
   for (let day = 0; day < 7; day++) {
     const currentDay = addDays(startDate, day);
     for (let hour = 8; hour <= 17; hour++) {
       const startTime = addHours(currentDay, hour);
       if (isBefore(now, startTime)) {
+        const startTimeString = startTime.toISOString();
+        const isAvailable = !bookedTimeslots.includes(startTimeString);
         timeslots.push({
-          startTime: startTime.toISOString(),
-          isAvailable: Math.random() > 0.3,
+          startTime: startTimeString,
+          isAvailable,
         });
       }
     }
@@ -160,7 +185,7 @@ export default function FindDoctorPage() {
 
   const handleConfirmBooking = async () => {
     if (!selectedDoctorId || !selectedTimeslot || !reason) {
-      alert("Vui lòng chọn thời gian và nhập lý do khám.");
+      toast.error("Vui lòng chọn thời gian và nhập lý do khám.");
       return;
     }
 
@@ -176,7 +201,7 @@ export default function FindDoctorPage() {
       router.push("/patient/my-schedule");
     } catch (error) {
       console.error("Booking failed:", error);
-      alert("Đặt lịch thất bại. Vui lòng thử lại.");
+      toast.error("Đặt lịch thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -315,13 +340,16 @@ export default function FindDoctorPage() {
                     <SelectValue placeholder="Chọn thời gian" />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeslots
-                      .filter((slot) => slot.isAvailable)
-                      .map((slot) => (
-                        <SelectItem key={slot.startTime} value={slot.startTime}>
-                          {format(new Date(slot.startTime), "dd/MM/yyyy HH:mm")}
-                        </SelectItem>
-                      ))}
+                    {timeslots.map((slot) => (
+                      <SelectItem
+                        key={slot.startTime}
+                        value={slot.startTime}
+                        disabled={!slot.isAvailable}
+                      >
+                        {format(new Date(slot.startTime), "dd/MM/yyyy HH:mm")}{" "}
+                        {slot.isAvailable ? "" : "(Đã được đặt)"}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

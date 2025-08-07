@@ -109,7 +109,6 @@ export default function MySchedulePage() {
     } catch (error) {
       console.error("Failed to cancel appointment:", error);
       toast.error("Hủy lịch hẹn thất bại. Vui lòng thử lại.");
-      alert("Hủy lịch hẹn thất bại. Vui lòng thử lại.");
     }
   };
 

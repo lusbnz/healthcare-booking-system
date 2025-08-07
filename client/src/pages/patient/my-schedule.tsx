@@ -31,7 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"; 
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 type ApiAppointment = {
   id: number;
@@ -78,7 +79,7 @@ export default function MySchedulePage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedAppointment, setSelectedAppointment] =
     useState<ApiAppointment | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false); 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -173,7 +174,7 @@ export default function MySchedulePage() {
       );
     } catch (error) {
       console.error("Cancellation failed:", error);
-      alert("Hủy lịch thất bại. Vui lòng thử lại.");
+      toast.error("Hủy lịch thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -189,7 +190,7 @@ export default function MySchedulePage() {
           setIsDialogOpen(true);
         } catch (error) {
           console.error("Failed to fetch appointment details:", error);
-          alert("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.");
+          toast.error("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.");
         }
       };
 
@@ -202,7 +203,7 @@ export default function MySchedulePage() {
       router.push(`?apptId=${appointmentId}`);
     } catch (error) {
       console.error("Failed to fetch appointment details:", error);
-      alert("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.");
+      toast.error("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.")
     }
   };
 
