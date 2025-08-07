@@ -104,7 +104,11 @@ export function GuestRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.push(`/${user.user_type}/dashboard`);
+      if (user.user_type === 'patient') {
+        router.push(`/${user.user_type}/dashboard`);
+      } else {
+        router.push(`/${user.user_type}/my-schedule`);
+      }
     }
   }, [isLoading, user, router]);
 

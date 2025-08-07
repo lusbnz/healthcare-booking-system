@@ -3,58 +3,67 @@
 import { StatCard, StatCardProps } from "@/components/common/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import {
   IconUsers,
-  IconClipboardList,
-  IconStethoscope,
   IconPrescription,
   IconPill,
+  IconClipboardList,
 } from "@tabler/icons-react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
-import { ProtectedRoute } from "@/lib/auth";
+import { ProtectedRoute, useAuth } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import { getAppointments, getDoctorsForPatients, getPatientDashboard } from "@/api/patients";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
-const patientStats: StatCardProps[] = [
-  {
-    title: "Lịch hẹn sắp tới",
-    value: 3,
-    badge: { value: "+1", trend: "up" },
-    footerLabel: "Trong 7 ngày tới",
-    // icon: IconClipboardList,
-    className:
-      "bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-shadow",
-  },
-  {
-    title: "Bác sĩ theo dõi",
-    value: 2,
-    footerLabel: "Ổn định",
-    icon: IconUsers,
-    className:
-      "bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-shadow",
-  },
-  {
-    title: "Hồ sơ y tế",
-    value: 12,
-    badge: { value: "+2", trend: "up" },
-    footerLabel: "Kết quả gần nhất",
-    footerSub: "Dữ liệu mới cập nhật",
-    // icon: IconStethoscope,
-    className:
-      "bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-shadow",
-  },
-  {
-    title: "Thuốc đang dùng",
-    value: 4,
-    footerLabel: "Theo đơn",
-    icon: IconPrescription,
-    className:
-      "bg-gradient-to-br from-pink-50 to-white hover:shadow-lg transition-shadow",
-  },
-];
+type ApiAppointment = {
+  id: number;
+  patient: number;
+  doctor: number;
+  timeslot: string;
+  reason: string;
+  status: "pending" | "confirm" | "cancelled";
+  created_at: string;
+  updated_at: string;
+};
+
+type Appointment = {
+  id: number;
+  doctorName: string;
+  patient: number;
+  doctor: number;
+  date: string;
+  time: string;
+  location: string;
+  timeslot: string;
+  phone: string;
+  status: "pending" | "confirm" | "cancelled";
+  reason: string;
+};
+
+type Doctor = {
+  id: number;
+  username: string;
+  email: string;
+  phone_number: string | null;
+  profile: {
+    fullname?: string;
+    email?: string;
+    phone_number?: string;
+    specialty?: string;
+    address?: string;
+    license_number?: string;
+  };
+};
+
+type DashboardStats = {
+  upcoming_appointments: number;
+  unread_notifications: number;
+};
 
 const quickActions: StatCardProps[] = [
   {
@@ -73,18 +82,159 @@ const quickActions: StatCardProps[] = [
     className:
       "cursor-pointer bg-gradient-to-br from-green-100 to-white hover:bg-green-200 transition-all",
   },
-  {
-    title: "Xem Hồ Sơ",
-    value: "",
-    footerLabel: "Xem lịch sử y tế",
-    icon: IconStethoscope,
-    className:
-      "cursor-pointer bg-gradient-to-br from-purple-100 to-white hover:bg-purple-200 transition-all",
-  },
 ];
 
 export default function PatientDashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [stats, setStats] = useState<StatCardProps[]>([]);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const doctorList: Doctor[] = await getDoctorsForPatients();
+        setDoctors(doctorList);
+      } catch (error) {
+        console.error("Failed to fetch doctors:", error);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const apiAppointments: ApiAppointment[] = await getAppointments("");
+        const mappedAppointments = await Promise.all(
+          apiAppointments.map(async (appt) => {
+            const doctorDetails = doctors?.find(
+              (doctor) => doctor.id === appt.doctor
+            );
+            const timeslot = new Date(appt.timeslot);
+            return {
+              id: appt.id,
+              doctorName: doctorDetails?.username || "Unknown",
+              doctor: appt.doctor,
+              patient: appt.patient,
+              date: format(timeslot, "dd/MM/yyyy", { locale: vi }),
+              time: format(timeslot, "HH:mm", { locale: vi }),
+              location: doctorDetails?.profile.address || "N/A",
+              phone: doctorDetails?.phone_number || "N/A",
+              status: appt.status,
+              reason: appt.reason,
+              timeslot: appt.timeslot,
+            } as Appointment;
+          })
+        );
+        setAppointments(mappedAppointments);
+      } catch (error) {
+        console.error("Failed to fetch appointments:", error);
+      }
+    };
+
+    fetchAppointments();
+  }, [doctors]);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const dashboardData: DashboardStats = await getPatientDashboard();
+        const newStats: StatCardProps[] = [
+          {
+            title: "Lịch hẹn sắp tới",
+            value: dashboardData.upcoming_appointments.toString(),
+            badge: dashboardData.upcoming_appointments > 0 ? { value: `+${dashboardData.upcoming_appointments}`, trend: "up" } : undefined,
+            footerLabel: "Trong 7 ngày tới",
+            className:
+              "bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-shadow",
+          },
+          {
+            title: "Thông báo chưa đọc",
+            value: dashboardData.unread_notifications.toString(),
+            badge: dashboardData.unread_notifications > 0 ? { value: `+${dashboardData.unread_notifications}`, trend: "up" } : undefined,
+            footerLabel: "Thông báo mới",
+            className:
+              "bg-gradient-to-br from-yellow-50 to-white hover:shadow-lg transition-shadow",
+          },
+          // {
+          //   title: "Bác sĩ theo dõi",
+          //   value: 2,
+          //   footerLabel: "Ổn định",
+          //   icon: IconUsers,
+          //   className:
+          //     "bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-shadow",
+          // },
+          // {
+          //   title: "Hồ sơ y tế",
+          //   value: 12,
+          //   badge: { value: "+2", trend: "up" },
+          //   footerLabel: "Kết quả gần nhất",
+          //   footerSub: "Dữ liệu mới cập nhật",
+          //   className:
+          //     "bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-shadow",
+          // },
+          // {
+          //   title: "Thuốc đang dùng",
+          //   value: 4,
+          //   footerLabel: "Theo đơn",
+          //   icon: IconPrescription,
+          //   className:
+          //     "bg-gradient-to-br from-pink-50 to-white hover:shadow-lg transition-shadow",
+          // },
+        ];
+        setStats(newStats);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+        // Fallback to default stats in case of API failure
+        setStats([
+          {
+            title: "Lịch hẹn sắp tới",
+            value: "0",
+            footerLabel: "Trong 7 ngày tới",
+            className:
+              "bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-shadow",
+          },
+          {
+            title: "Thông báo chưa đọc",
+            value: "0",
+            footerLabel: "Thông báo mới",
+            className:
+              "bg-gradient-to-br from-yellow-50 to-white hover:shadow-lg transition-shadow",
+          },
+          {
+            title: "Bác sĩ theo dõi",
+            value: 2,
+            footerLabel: "Ổn định",
+            icon: IconUsers,
+            className:
+              "bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-shadow",
+          },
+          {
+            title: "Hồ sơ y tế",
+            value: 12,
+            badge: { value: "+2", trend: "up" },
+            footerLabel: "Kết quả gần nhất",
+            footerSub: "Dữ liệu mới cập nhật",
+            className:
+              "bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-shadow",
+          },
+          {
+            title: "Thuốc đang dùng",
+            value: 4,
+            footerLabel: "Theo đơn",
+            icon: IconPrescription,
+            className:
+              "bg-gradient-to-br from-pink-50 to-white hover:shadow-lg transition-shadow",
+          },
+        ]);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
 
   const handleQuickActionClick = (title: string) => {
     switch (title) {
@@ -121,7 +271,7 @@ export default function PatientDashboardPage() {
               <Card className="bg-gradient-to-r from-green-500 to-blue-600 text-white shadow-lg rounded-xl overflow-hidden">
                 <CardContent className="py-8 px-6">
                   <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                    Chào mừng trở lại, Nguyễn Văn Nam!
+                    Chào mừng trở lại, {user?.username}!
                   </h2>
                   <p className="text-sm md:text-base opacity-90">
                     Hôm nay là ngày tuyệt vời để chăm sóc sức khỏe của bạn
@@ -131,7 +281,7 @@ export default function PatientDashboardPage() {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {patientStats.map((stat) => (
+                {stats.map((stat) => (
                   <StatCard key={stat.title} {...stat} />
                 ))}
               </div>
@@ -146,45 +296,24 @@ export default function PatientDashboardPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-4 space-y-4">
-                    {[
-                      {
-                        doctor: "BS. Nguyễn Văn A",
-                        date: "28/1/2025",
-                        time: "09:00",
-                        room: "Phòng 201, Tầng 2",
-                        status: "Đã xác nhận",
-                      },
-                      {
-                        doctor: "BS. Trần Thị B",
-                        date: "30/1/2025",
-                        time: "14:30",
-                        room: "Phòng 105, Tầng 1",
-                        status: "Chờ xác nhận",
-                      },
-                      {
-                        doctor: "BS. Lê Văn C",
-                        date: "2/2/2025",
-                        time: "10:15",
-                        room: "Phòng 301, Tầng 3",
-                        status: "Đã xác nhận",
-                      },
-                    ].map((item, i) => (
+                    {appointments.map((item, i) => (
                       <div
                         key={i}
                         className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
+                        onClick={() =>
+                          router.push(`/${user?.user_type}/my-schedule`)
+                        }
                       >
                         <div className="flex items-center justify-between">
                           <div className="font-semibold text-base">
-                            {item.doctor}
+                            {item.doctorName}
                           </div>
                           <Badge
                             variant={
-                              item.status === "Đã xác nhận"
-                                ? "default"
-                                : "outline"
+                              item.status === "confirm" ? "default" : "outline"
                             }
                             className={cn(
-                              item.status === "Đã xác nhận"
+                              item.status === "confirm"
                                 ? "bg-green-100 text-green-800"
                                 : "bg-yellow-100 text-yellow-800"
                             )}
@@ -196,7 +325,7 @@ export default function PatientDashboardPage() {
                           {item.date} — {item.time}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {item.room}
+                          {item.reason}
                         </div>
                       </div>
                     ))}
@@ -235,14 +364,6 @@ export default function PatientDashboardPage() {
                       Đã đến lúc uống thuốc huyết áp. Nhớ uống đúng giờ để đảm
                       bảo hiệu quả điều trị.
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => router.push("patient/medication-schedule")}
-                    >
-                      Xem lịch uống thuốc
-                    </Button>
                   </CardContent>
                 </Card>
               </div>

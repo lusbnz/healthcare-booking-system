@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -14,55 +14,124 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, startOfDay } from "date-fns";
+import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import {
+  cancelAppointment,
+  confirmAppointment,
+  getDoctorAppointments,
+} from "@/api/doctors";
+import { toast } from "sonner";
+
+type ApiAppointment = {
+  id: number;
+  patient: number;
+  doctor: number;
+  timeslot: string;
+  reason: string;
+  status: "pending" | "confirm" | "cancelled";
+  created_at: string;
+  updated_at: string;
+};
 
 type Appointment = {
   id: string;
   patientName: string;
   date: Date;
   time: string;
-  duration: string;
-  phone: string;
   status: string;
   treatment: string;
 };
 
-const initialAppointments: Appointment[] = [
-  {
-    id: "1",
-    patientName: "Nguyễn Văn A",
-    date: new Date("2025-07-25"),
-    time: "08:00",
-    duration: "30 phút",
-    phone: "0901234567",
-    status: "Đã xác nhận",
-    treatment: "Đau đầu, chóng mặt",
-  },
-  {
-    id: "2",
-    patientName: "Trần Thị B",
-    date: new Date("2025-07-25"),
-    time: "08:30",
-    duration: "45 phút",
-    phone: "0907654321",
-    status: "Chờ xác nhận",
-    treatment: "Ho, khan, sốt nhẹ",
-  },
-];
-
 export default function MySchedulePage() {
-  const [date, setDate] = useState<Date | undefined>(
-    new Date("2025-07-25T13:15:00+07:00")
-  );
-  const [appointments] = useState<Appointment[]>(initialAppointments);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Lọc các lịch hẹn theo ngày được chọn
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setIsLoading(true);
+        const apiAppointments: ApiAppointment[] = await getDoctorAppointments();
+        const mappedAppointments: Appointment[] = apiAppointments.map(
+          (appt) => {
+            const timeslot = new Date(appt.timeslot);
+            return {
+              id: appt.id.toString(),
+              patientName: `Bệnh nhân ${appt.patient}`,
+              date: timeslot,
+              time: format(timeslot, "HH:mm", { locale: vi }),
+              status:
+                appt.status === "confirm"
+                  ? "Đã xác nhận"
+                  : appt.status === "pending"
+                  ? "Chờ xác nhận"
+                  : "Đã hủy",
+              treatment: appt.reason,
+            };
+          }
+        );
+        setAppointments(mappedAppointments);
+      } catch (error) {
+        console.error("Failed to fetch appointments:", error);
+        toast.error("Không thể tải lịch hẹn. Vui lòng thử lại.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
+
+  const handleConfirmAppointment = async (id: string) => {
+    try {
+      await confirmAppointment(Number(id));
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === id ? { ...appt, status: "Đã xác nhận" } : appt
+        )
+      );
+    } catch (error) {
+      console.error("Failed to confirm appointment:", error);
+      toast.error("Xác nhận lịch hẹn thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const handleCancelAppointment = async (id: string) => {
+    try {
+      await cancelAppointment(Number(id));
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === id ? { ...appt, status: "Đã hủy" } : appt
+        )
+      );
+    } catch (error) {
+      console.error("Failed to cancel appointment:", error);
+      toast.error("Hủy lịch hẹn thất bại. Vui lòng thử lại.");
+      alert("Hủy lịch hẹn thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const totalAppointments = appointments.length;
+  const confirmedAppointments = appointments.filter(
+    (appt) => appt.status === "Đã xác nhận"
+  ).length;
+  const pendingAppointments = appointments.filter(
+    (appt) => appt.status === "Chờ xác nhận"
+  ).length;
+  const cancelAppoinments = appointments.filter(
+    (appt) => appt.status === "Đã hủy"
+  ).length;
+
   const filteredAppointments = date
-    ? appointments.filter((app) => isSameDay(app.date, date))
+    ? appointments.filter((app) => {
+        const appointmentDate = startOfDay(app.date);
+        const selectedDate = startOfDay(date);
+        return isSameDay(appointmentDate, selectedDate);
+      })
     : appointments;
 
-  // Lấy danh sách các ngày có lịch hẹn
   const getDaysWithAppointments = () => {
     return appointments.map((app) => app.date);
   };
@@ -75,8 +144,8 @@ export default function MySchedulePage() {
       <div>
         <div className="font-medium">{appointment.patientName}</div>
         <div className="text-sm text-muted-foreground">
-          {format(appointment.date, "dd/MM/yyyy")} - {appointment.time} (
-          {appointment.duration})
+          {format(appointment.date, "dd/MM/yyyy", { locale: vi })} -{" "}
+          {appointment.time}
         </div>
         <div className="text-sm text-muted-foreground">
           {appointment.treatment}
@@ -88,19 +157,32 @@ export default function MySchedulePage() {
             "text-sm",
             appointment.status === "Đã xác nhận"
               ? "text-green-600"
-              : "text-yellow-600"
+              : appointment.status === "Chờ xác nhận"
+              ? "text-yellow-600"
+              : "text-red-600"
           )}
         >
           {appointment.status}
         </div>
-        <div className="text-sm text-muted-foreground">{appointment.phone}</div>
         <div className="flex gap-2 mt-2">
-          <Button variant="outline" size="sm">
-            Xem chi tiết
-          </Button>
-          <Button variant="outline" size="sm">
-            Chỉnh sửa
-          </Button>
+          {appointment.status === "Chờ xác nhận" && (
+            <>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleConfirmAppointment(appointment.id)}
+              >
+                Xác nhận
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleCancelAppointment(appointment.id)}
+              >
+                Hủy
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -131,31 +213,31 @@ export default function MySchedulePage() {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <StatCard
               title="Tổng Lịch Hẹn"
-              value="5"
+              value={totalAppointments.toString()}
               icon={CalendarIcon}
               footerLabel="Tổng số lịch hẹn"
               className="bg-gradient-to-br from-blue-50 to-white"
             />
             <StatCard
               title="Đã Xác Nhận"
-              value="3"
+              value={confirmedAppointments.toString()}
               icon={CalendarIcon}
               footerLabel="Lịch hẹn xác nhận"
               className="bg-gradient-to-br from-green-50 to-white"
             />
             <StatCard
               title="Chờ Xác Nhận"
-              value="1"
+              value={pendingAppointments.toString()}
               icon={CalendarIcon}
               footerLabel="Lịch hẹn đang chờ"
               className="bg-gradient-to-br from-yellow-50 to-white"
             />
             <StatCard
-              title="Phòng Khám"
-              value="A101"
+              title="Đã huỷ"
+              value={cancelAppoinments.toString()}
               icon={CalendarIcon}
-              footerLabel="Phòng hiện tại"
-              className="bg-gradient-to-br from-purple-50 to-white"
+              footerLabel="Lịch hẹn đã huỷ"
+              className="bg-gradient-to-br from-red-50 to-white"
             />
           </div>
 
@@ -173,7 +255,7 @@ export default function MySchedulePage() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : "Chọn ngày"}
+                      {date ? format(date, "PPP", { locale: vi }) : "Chọn ngày"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -200,10 +282,14 @@ export default function MySchedulePage() {
             <CardContent>
               <h3 className="text-lg font-semibold mb-4">
                 {date
-                  ? `Lịch hẹn ngày ${format(date, "dd/MM/yyyy")}`
+                  ? `Lịch hẹn ngày ${format(date, "dd/MM/yyyy", {
+                      locale: vi,
+                    })}`
                   : "Tất cả lịch hẹn"}
               </h3>
-              {filteredAppointments.length > 0 ? (
+              {isLoading ? (
+                <p className="text-muted-foreground">Đang tải lịch hẹn...</p>
+              ) : filteredAppointments.length > 0 ? (
                 filteredAppointments.map(renderAppointment)
               ) : (
                 <p className="text-muted-foreground">

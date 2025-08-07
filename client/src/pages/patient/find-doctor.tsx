@@ -17,14 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { bookAppointment, getDoctorsForPatients } from "@/api/patients";
 import { useRouter } from "next/navigation";
 import { format, addHours, isBefore, startOfDay, addDays } from "date-fns";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Doctor = {
   id: number;
@@ -58,7 +64,7 @@ async function getAvailableTimeslots(doctorId: number): Promise<Timeslot[]> {
       if (isBefore(now, startTime)) {
         timeslots.push({
           startTime: startTime.toISOString(),
-          isAvailable: Math.random() > 0.3, 
+          isAvailable: Math.random() > 0.3,
         });
       }
     }
@@ -92,11 +98,15 @@ export default function FindDoctorPage() {
     fetchDoctors();
   }, []);
 
-  const specialties = Array.from(
-    new Set(allDoctors.map((doctor) => doctor.profile.specialty))
+  const specialties = useMemo(
+    () =>
+      Array.from(new Set(allDoctors.map((doctor) => doctor.profile.specialty))),
+    [allDoctors]
   );
-  const addresses = Array.from(
-    new Set(allDoctors.map((doctor) => doctor.profile.address))
+  const addresses = useMemo(
+    () =>
+      Array.from(new Set(allDoctors.map((doctor) => doctor.profile.address))),
+    [allDoctors]
   );
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,8 +136,12 @@ export default function FindDoctorPage() {
       const matchesSearch = doctor.username
         .toLowerCase()
         .includes(search.toLowerCase());
-      const matchesSpecialty = !specialty || specialty === "all" || doctor.profile.specialty === specialty;
-      const matchesAddress = !address || address === "all" || doctor.profile.address === address;
+      const matchesSpecialty =
+        !specialty ||
+        specialty === "all" ||
+        doctor.profile.specialty === specialty;
+      const matchesAddress =
+        !address || address === "all" || doctor.profile.address === address;
       return matchesSearch && matchesSpecialty && matchesAddress;
     });
     setDoctors(filtered);
@@ -206,11 +220,14 @@ export default function FindDoctorPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả chuyên khoa</SelectItem>
-                  {specialties.map((specialty) => (
-                    <SelectItem key={specialty} value={specialty!}>
-                      {specialty}
-                    </SelectItem>
-                  ))}
+                  {specialties.map((specialty) => {
+                    if (!specialty) return null;
+                    return (
+                      <SelectItem key={specialty} value={specialty!}>
+                        {specialty}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -225,11 +242,14 @@ export default function FindDoctorPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả địa điểm</SelectItem>
-                  {addresses.map((address) => (
-                    <SelectItem key={address} value={address!}>
-                      {address}
-                    </SelectItem>
-                  ))}
+                  {addresses.map((address) => {
+                    if (!address) return null;
+                    return (
+                      <SelectItem key={address} value={address!}>
+                        {address}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -261,7 +281,8 @@ export default function FindDoctorPage() {
                       Địa điểm: {doctor.profile.address || "Chưa xác định"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Giấy phép: {doctor.profile.license_number || "Chưa xác định"}
+                      Giấy phép:{" "}
+                      {doctor.profile.license_number || "Chưa xác định"}
                     </p>
                   </div>
                   <Button
@@ -283,7 +304,9 @@ export default function FindDoctorPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="timeslot" className="mb-2">Thời gian</Label>
+                <Label htmlFor="timeslot" className="mb-2">
+                  Thời gian
+                </Label>
                 <Select
                   value={selectedTimeslot}
                   onValueChange={setSelectedTimeslot}
@@ -295,10 +318,7 @@ export default function FindDoctorPage() {
                     {timeslots
                       .filter((slot) => slot.isAvailable)
                       .map((slot) => (
-                        <SelectItem
-                          key={slot.startTime}
-                          value={slot.startTime}
-                        >
+                        <SelectItem key={slot.startTime} value={slot.startTime}>
                           {format(new Date(slot.startTime), "dd/MM/yyyy HH:mm")}
                         </SelectItem>
                       ))}
@@ -306,7 +326,9 @@ export default function FindDoctorPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="reason" className="mb-2">Lý do khám</Label>
+                <Label htmlFor="reason" className="mb-2">
+                  Lý do khám
+                </Label>
                 <Input
                   id="reason"
                   placeholder="Nhập lý do khám..."
@@ -316,10 +338,7 @@ export default function FindDoctorPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 Hủy
               </Button>
               <Button onClick={handleConfirmBooking}>Xác nhận</Button>

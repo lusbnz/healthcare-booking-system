@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAllNotifications } from "@/api/notifications";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 
 interface Notification {
   id: number;
@@ -32,6 +34,8 @@ export function NotificationsDrawer({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const {user} = useAuth()
 
   useEffect(() => {
     if (isOpen) {
@@ -39,11 +43,7 @@ export function NotificationsDrawer({
         setIsLoading(true);
         try {
           const response = await getAllNotifications();
-          if (!response.ok) {
-            throw new Error("Failed to fetch notifications");
-          }
-          const data: Notification[] = await response.json();
-          setNotifications(data);
+          setNotifications(response);
         } catch (err) {
           setError("Error fetching notifications");
           console.error(err);
@@ -84,6 +84,9 @@ export function NotificationsDrawer({
                   className={`p-2 rounded-md ${
                     notification.read ? "bg-muted" : "bg-primary/10"
                   }`}
+                  onClick={() => {
+                    router.push(`/${user?.user_type}/my-schedule`)
+                  }}
                 >
                   <div className="flex justify-between items-start">
                     <p className="text-sm">{notification.message}</p>

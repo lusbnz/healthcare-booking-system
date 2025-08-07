@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatCard, StatCardProps } from "@/components/common/stat-card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -22,7 +22,7 @@ import {
   getAppointments,
   getDoctorsForPatients,
   updateAppointment,
-  getAppointmentDetail, // Import the API function
+  getAppointmentDetail,
 } from "@/api/patients";
 import {
   Dialog,
@@ -31,7 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"; // Import shadcn/ui Dialog components
+} from "@/components/ui/dialog"; 
 
 type ApiAppointment = {
   id: number;
@@ -77,9 +77,10 @@ export default function MySchedulePage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedAppointment, setSelectedAppointment] =
-    useState<ApiAppointment | null>(null); // State for selected appointment details
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // State for dialog open/close
+    useState<ApiAppointment | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false); 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -176,13 +177,29 @@ export default function MySchedulePage() {
     }
   };
 
+  useEffect(() => {
+    const apptId = searchParams.get("apptId");
+    if (apptId) {
+      const fetchAppointmentDetails = async () => {
+        try {
+          const appointmentDetails: ApiAppointment = await getAppointmentDetail(
+            Number(apptId)
+          );
+          setSelectedAppointment(appointmentDetails);
+          setIsDialogOpen(true);
+        } catch (error) {
+          console.error("Failed to fetch appointment details:", error);
+          alert("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.");
+        }
+      };
+
+      fetchAppointmentDetails();
+    }
+  }, [searchParams]);
+
   const handleViewDetails = async (appointmentId: number) => {
     try {
-      const appointmentDetails: ApiAppointment = await getAppointmentDetail(
-        appointmentId
-      );
-      setSelectedAppointment(appointmentDetails);
-      setIsDialogOpen(true);
+      router.push(`?apptId=${appointmentId}`);
     } catch (error) {
       console.error("Failed to fetch appointment details:", error);
       alert("Không thể tải chi tiết lịch hẹn. Vui lòng thử lại.");
@@ -308,12 +325,17 @@ export default function MySchedulePage() {
                                 Hủy lịch
                               </Button>
                             )}
-                          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                          <Dialog
+                            open={isDialogOpen}
+                            onOpenChange={setIsDialogOpen}
+                          >
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleViewDetails(appointment.id)}
+                                onClick={() =>
+                                  handleViewDetails(appointment.id)
+                                }
                               >
                                 Xem chi tiết
                               </Button>
@@ -328,13 +350,15 @@ export default function MySchedulePage() {
                               {selectedAppointment ? (
                                 <div className="space-y-4">
                                   <p>
-                                    <strong>ID:</strong> {selectedAppointment.id}
+                                    <strong>ID:</strong>{" "}
+                                    {selectedAppointment.id}
                                   </p>
                                   <p>
                                     <strong>Bác sĩ:</strong>{" "}
                                     {
                                       doctors.find(
-                                        (d) => d.id === selectedAppointment.doctor
+                                        (d) =>
+                                          d.id === selectedAppointment.doctor
                                       )?.username
                                     }
                                   </p>

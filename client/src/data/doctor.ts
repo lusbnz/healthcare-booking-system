@@ -9,21 +9,21 @@ import {
 
 export const doctorSidebar = {
   navMain: [
-    {
-      title: "Dashboard",
-      url: "/doctor/dashboard",
-      icon: IconDashboard,
-    },
-    {
-      title: "Availibity",
-      url: "/doctor/availability",
-      icon: IconCalendarClock,
-    },
-    {
-      title: "Partients",
-      url: "/doctor/list-patient",
-      icon: IconUsers,
-    },
+    // {
+    //   title: "Dashboard",
+    //   url: "/doctor/dashboard",
+    //   icon: IconDashboard,
+    // },
+    // {
+    //   title: "Availibity",
+    //   url: "/doctor/availability",
+    //   icon: IconCalendarClock,
+    // },
+    // {
+    //   title: "Partients",
+    //   url: "/doctor/list-patient",
+    //   icon: IconUsers,
+    // },
     {
       title: "My Schedule",
       url: "/doctor/my-schedule",
