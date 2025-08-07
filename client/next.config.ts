@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/doctor',
-        destination: '/doctor/dashboard',
+        destination: '/doctor/my-schedule',
         permanent: true,
       },
       {
