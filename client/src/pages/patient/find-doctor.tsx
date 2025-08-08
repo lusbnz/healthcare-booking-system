@@ -36,13 +36,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 type Doctor = {
   id: number;
   username: string;
   email: string;
   phone_number: string | null;
-  profile: {
+  doctor_profile_id: number;
+  profile?: {
     fullname?: string;
     email?: string;
     phone_number?: string;
@@ -101,6 +103,8 @@ async function getAvailableTimeslots(doctorId: number): Promise<Timeslot[]> {
 }
 
 export default function FindDoctorPage() {
+  const { user } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("");
   const [addressesFilter, setAddressesFilter] = useState("");
@@ -128,7 +132,9 @@ export default function FindDoctorPage() {
 
   const specialties = useMemo(
     () =>
-      Array.from(new Set(allDoctors.map((doctor) => doctor.profile?.specialty))),
+      Array.from(
+        new Set(allDoctors.map((doctor) => doctor.profile?.specialty))
+      ),
     [allDoctors]
   );
   const addresses = useMemo(
@@ -176,6 +182,7 @@ export default function FindDoctorPage() {
   };
 
   const handleBookAppointment = async (doctorId: number) => {
+    if (!doctorId) return;
     setSelectedDoctorId(doctorId);
     try {
       const availableTimeslots = await getAvailableTimeslots(doctorId);
@@ -192,11 +199,14 @@ export default function FindDoctorPage() {
       return;
     }
 
+    // if (!user?.id) return;
+
     try {
       await bookAppointment({
         doctor: selectedDoctorId,
         timeslot: selectedTimeslot,
         reason,
+        // patient: user.id,
       });
       setIsModalOpen(false);
       setSelectedTimeslot("");
@@ -225,7 +235,7 @@ export default function FindDoctorPage() {
           <div className="mb-6 flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <Label htmlFor="search">
-                Tìm theo tên bác sĩ, chuyên khoa...
+                Tìm theo tên bác sĩ...
               </Label>
               <Input
                 id="search"
@@ -303,7 +313,8 @@ export default function FindDoctorPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Chuyên khoa: {doctor.profile?.specialty || "Chưa xác định"}
+                      Chuyên khoa:{" "}
+                      {doctor.profile?.specialty || "Chưa xác định"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Địa điểm: {doctor.profile?.address || "Chưa xác định"}
@@ -315,7 +326,9 @@ export default function FindDoctorPage() {
                   </div>
                   <Button
                     className="w-full"
-                    onClick={() => handleBookAppointment(doctor.id)}
+                    onClick={() =>
+                      handleBookAppointment(doctor.doctor_profile_id)
+                    }
                   >
                     Đặt lịch hẹn
                   </Button>

@@ -57,7 +57,7 @@ export default function PatientProfile() {
         setFormData({
           id: profile.id || 0,
           username: profile.username || "",
-          fullname: profile.fullname || "",
+          fullname: profile.profile?.fullname || "",
           email: profile.email || "",
           phone_number: profile.phone_number || null,
           user_type: profile.user_type || "patient",
@@ -111,17 +111,10 @@ export default function PatientProfile() {
         throw new Error("Profile data is missing");
       }
       await updatePatientProfile({
-        id: formData.id,
-        username: formData.username,
         fullname: formData.fullname,
-        email: formData.email,
-        phone_number: formData.phone_number,
-        user_type: formData.user_type,
-        profile: {
-          address: formData.profile.address || "",
-          date_of_birth: formData.profile.date_of_birth || "",
-          insurance_number: formData.profile.insurance_number || "",
-        },
+        address: formData.profile.address || "",
+        date_of_birth: formData.profile.date_of_birth || "",
+        insurance_number: formData.profile.insurance_number || "",
       });
       toast.success("Profile updated successfully.");
     } catch (error) {

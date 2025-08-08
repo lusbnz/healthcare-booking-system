@@ -12,7 +12,7 @@ export function getRefreshToken() {
 }
 
 export async function refreshAccessToken() {
-  const res = await fetch("/api/auth/refresh", {
+  const res = await fetch("/api/users/token/refresh", {
     method: "POST",
     credentials: "include",
     headers: {

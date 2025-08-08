@@ -133,3 +133,8 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.dialog-overlay {
+  background-color: #ffffff !important;
+  opacity: 0.1 !important;
+}

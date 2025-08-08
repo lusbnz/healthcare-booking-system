@@ -4,6 +4,7 @@ export async function bookAppointment(payload: {
     doctor: number
     timeslot: string
     reason: string
+    // patient: number
 }) {
     const res = await api.post("/patients/booking/", payload)
     return res.data
@@ -37,17 +38,10 @@ export async function getUserProfile() {
 }
   
 export async function updatePatientProfile(payload: {
-    id: number
-    username: string
     fullname: string
-    email: string
-    phone_number: string | null
-    user_type: "doctor" | "patient"
-    profile: null | {
-        address: string | null
-        date_of_birth: string | null
-        insurance_number: string | null
-    }
+    address: string | null
+    date_of_birth: string | null
+    insurance_number: string | null
 }) {
     const res = await api.put("/patients/profile/", payload)
     return res.data

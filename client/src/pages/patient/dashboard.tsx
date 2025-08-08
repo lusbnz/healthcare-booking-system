@@ -33,6 +33,7 @@ type ApiAppointment = {
   status: "pending" | "confirm" | "cancelled";
   created_at: string;
   updated_at: string;
+  doctor_name: string;
 };
 
 type Appointment = {
@@ -120,7 +121,7 @@ export default function PatientDashboardPage() {
             const timeslot = new Date(appt.timeslot);
             return {
               id: appt.id,
-              doctorName: doctorDetails?.username || "Unknown",
+              doctorName: appt.doctor_name || "Unknown",
               doctor: appt.doctor,
               patient: appt.patient,
               date: format(timeslot, "dd/MM/yyyy", { locale: vi }),
@@ -311,7 +312,7 @@ export default function PatientDashboardPage() {
                       Lịch Hẹn Sắp Tới
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-4 space-y-4">
+                  <CardContent className="pt-4 space-y-4 max-h-[500px] overflow-y-auto">
                     {appointments.map((item, i) => (
                       <div
                         key={i}

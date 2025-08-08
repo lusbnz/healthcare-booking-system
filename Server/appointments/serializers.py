@@ -11,8 +11,9 @@ from rest_framework import serializers
 from .models import Appointment
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    patient_name = serializers.SerializerMethodField()
+    patient_name = serializers.SerializerMethodField(read_only=True)
     doctor_name = serializers.SerializerMethodField()
+    patient = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Appointment

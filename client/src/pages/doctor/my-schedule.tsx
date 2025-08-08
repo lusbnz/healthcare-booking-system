@@ -33,6 +33,7 @@ type ApiAppointment = {
   status: "pending" | "confirm" | "cancelled";
   created_at: string;
   updated_at: string;
+  patient_name: string;
 };
 
 type Appointment = {
@@ -42,6 +43,7 @@ type Appointment = {
   time: string;
   status: string;
   treatment: string;
+  patient_name?: string;
 };
 
 export default function MySchedulePage() {
@@ -59,7 +61,7 @@ export default function MySchedulePage() {
             const timeslot = new Date(appt.timeslot);
             return {
               id: appt.id.toString(),
-              patientName: `Bệnh nhân ${appt.patient}`,
+              patientName: appt.patient_name,
               date: timeslot,
               time: format(timeslot, "HH:mm", { locale: vi }),
               status:

@@ -38,6 +38,7 @@ type ApiAppointment = {
   id: number;
   patient: number;
   doctor: number;
+  doctor_name: string;
   timeslot: string;
   reason: string;
   status: "pending" | "confirm" | "cancelled";
@@ -108,7 +109,7 @@ export default function MySchedulePage() {
             const timeslot = new Date(appt.timeslot);
             return {
               id: appt.id,
-              doctorName: doctorDetails?.username,
+              doctorName: appt.doctor_name,
               doctor: appt.doctor,
               patient: appt.patient,
               date: format(timeslot, "dd/MM/yyyy", { locale: vi }),
@@ -341,7 +342,7 @@ export default function MySchedulePage() {
                                 Xem chi tiết
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                          <DialogContent className="bg-white">
                               <DialogHeader>
                                 <DialogTitle>Chi tiết lịch hẹn</DialogTitle>
                                 <DialogDescription>
