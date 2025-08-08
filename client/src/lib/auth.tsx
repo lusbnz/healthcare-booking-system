@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokens(response.access, response.refresh);
       const profile = await getUserProfile();
       setUser(profile);
-      router.push(`/${profile.user_type}/dashboard`);
+      router.push(`/${profile.user_type}/`);
     } catch (error) {
       throw new Error('Login failed');
     }
