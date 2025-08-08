@@ -7,32 +7,38 @@ from doctors.serializers import DoctorProfileSerializer
 User = get_user_model()
 
 class DoctorForPatientSerializer(serializers.ModelSerializer):
-    # Lấy thông tin profile nếu có
     profile = serializers.SerializerMethodField()
-
-    class Meta:
-        model  = User
-        fields = [
-            'id',
-            'username',
-            'email',
-            'phone_number',
-            'profile',
-        ]
-
-    def get_profile(self, user):
-        # Nếu doctor_profile tồn tại, serialize nó
-        prof = getattr(user, 'doctor_profile', None)
-        return DoctorProfileSerializer(prof).data if prof else {}
-
-class MeSerializer(serializers.ModelSerializer):
-    profile = serializers.SerializerMethodField()
-    fullname = serializers.CharField()
+    doctor_profile_id = serializers.SerializerMethodField()  # Thêm trường này
 
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'fullname', 'email', 'phone_number',
+            'id',
+            'username', 
+            'email',
+            'phone_number',
+            'profile',
+            'doctor_profile_id'  # Thêm vào fields
+        ]
+
+    def get_profile(self, obj):
+        if hasattr(obj, 'doctor_profile'):
+            return DoctorProfileSerializer(obj.doctor_profile).data
+        return None
+
+    def get_doctor_profile_id(self, obj):
+        if hasattr(obj, 'doctor_profile'):
+            return obj.doctor_profile.id
+        return None
+
+class MeSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField()
+    # fullname = serializers.CharField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'phone_number',
             'user_type', 'profile'
         ]
 

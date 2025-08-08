@@ -6,6 +6,7 @@ User = get_user_model()
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
     # fullname = serializers.CharField()
+    # id = serializers.IntegerField(read_only=True)
     fullname = serializers.CharField(source='user.fullname')
     email        = serializers.EmailField(source='user.email')
     phone_number = serializers.CharField(source='user.phone_number')
@@ -16,7 +17,6 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model  = DoctorProfile
         fields = ['fullname','email','phone_number','specialty','address','license_number']
-
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         # đọc từ property user.fullname
