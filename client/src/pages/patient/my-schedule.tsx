@@ -113,7 +113,7 @@ export default function MySchedulePage() {
               patient: appt.patient,
               date: format(timeslot, "dd/MM/yyyy", { locale: vi }),
               time: format(timeslot, "HH:mm", { locale: vi }),
-              location: doctorDetails?.profile.address,
+              location: doctorDetails?.profile?.address,
               phone: doctorDetails?.phone_number,
               status: appt.status,
               reason: appt.reason,

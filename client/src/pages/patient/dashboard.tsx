@@ -125,7 +125,7 @@ export default function PatientDashboardPage() {
               patient: appt.patient,
               date: format(timeslot, "dd/MM/yyyy", { locale: vi }),
               time: format(timeslot, "HH:mm", { locale: vi }),
-              location: doctorDetails?.profile.address || "N/A",
+              location: doctorDetails?.profile?.address || "N/A",
               phone: doctorDetails?.phone_number || "N/A",
               status: appt.status,
               reason: appt.reason,
