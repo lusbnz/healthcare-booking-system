@@ -128,7 +128,7 @@ export default function FindDoctorPage() {
 
   const specialties = useMemo(
     () =>
-      Array.from(new Set(allDoctors.map((doctor) => doctor.profile.specialty))),
+      Array.from(new Set(allDoctors.map((doctor) => doctor.profile?.specialty))),
     [allDoctors]
   );
   const addresses = useMemo(
@@ -167,7 +167,7 @@ export default function FindDoctorPage() {
       const matchesSpecialty =
         !specialty ||
         specialty === "all" ||
-        doctor.profile.specialty === specialty;
+        doctor.profile?.specialty === specialty;
       const matchesAddress =
         !address || address === "all" || doctor.profile.address === address;
       return matchesSearch && matchesSpecialty && matchesAddress;
@@ -303,7 +303,7 @@ export default function FindDoctorPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Chuyên khoa: {doctor.profile.specialty || "Chưa xác định"}
+                      Chuyên khoa: {doctor.profile?.specialty || "Chưa xác định"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Địa điểm: {doctor.profile.address || "Chưa xác định"}
