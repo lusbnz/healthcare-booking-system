@@ -12,6 +12,9 @@ services:
     #   - ./Server/.env  # nếu có biến môi trường
     depends_on:
       - db
+      - redis
+    networks:
+      - app-network
 
   db:
     image: postgres:14
@@ -24,6 +27,20 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7
+    container_name: redis_server
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
