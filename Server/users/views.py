@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -12,7 +12,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .serializers import MeSerializer
 
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer, DoctorForAdminSerializer, PatientForAdminSerializer
 from .permissions import IsAdmin  # permission riêng cho admin
 
 User = get_user_model()
@@ -41,21 +41,26 @@ class MeView(APIView):
 
 # Admin - danh sách bác sĩ
 class DoctorListView(generics.ListAPIView):
-    serializer_class = UserSerializer
+    serializer_class = DoctorForAdminSerializer  # We'll use the existing serializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def get_queryset(self):
-        return User.objects.filter(user_type='doctor')
-
+        return User.objects.filter(user_type='doctor').select_related('doctor_profile')
+    
+    def get_serializer_class(self):
+        return self.serializer_class
 
 # Admin - danh sách bệnh nhân
 class PatientListView(generics.ListAPIView):
-    serializer_class = UserSerializer
+    serializer_class = PatientForAdminSerializer  # We'll use the existing serializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def get_queryset(self):
-        return User.objects.filter(user_type='patient')
+        return User.objects.filter(user_type='patient').select_related('patient_profile')
 
+    def get_serializer_class(self):
+        return self.serializer_class
+    
 # Đổi mật khẩu
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -80,3 +85,17 @@ class ChangePasswordView(APIView):
         user.save()
 
         return Response({"detail": "Đổi mật khẩu thành công."}, status=status.HTTP_200_OK)
+    
+from rest_framework import viewsets
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from .serializers import DoctorForAdminSerializer,PatientForAdminSerializer
+
+class AdminPatientViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.filter(user_type='patient').select_related('patient_profile')
+    serializer_class = PatientForAdminSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+class AdminDoctorViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.filter(user_type='doctor').select_related('doctor_profile')
+    serializer_class = DoctorForAdminSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]

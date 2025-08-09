@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import environ
+import dj_database_url
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -10,14 +11,23 @@ environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env'
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-f+ycb0jsw!o@0z1u-=1))6f#*10caxk%bvt4mb%e1ry3il_n4e')
+DEBUG = env('DEBUG', default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[]) + ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDIS_URL")],
+        },
+    },
+}
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -104,15 +114,22 @@ CORS_ALLOWED_ORIGINS = [
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE':   env('DB_ENGINE'),
+#         'NAME':     env('DB_NAME'),
+#         'USER':     env('DB_USER'),
+#         'PASSWORD': env('DB_PASSWORD'),
+#         'HOST':     env('DB_HOST'),
+#         'PORT':     env('DB_PORT'),
+#     }
+# }
+
 DATABASES = {
-    'default': {
-        'ENGINE':   env('DB_ENGINE'),
-        'NAME':     env('DB_NAME'),
-        'USER':     env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST':     env('DB_HOST'),
-        'PORT':     env('DB_PORT'),
-    }
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL', 'postgresql://user:password@localhost:5432/healthdb'),
+        conn_max_age=600
+    )
 }
 
 

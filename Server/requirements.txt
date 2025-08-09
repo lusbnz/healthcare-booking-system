@@ -15,3 +15,8 @@ django-filter>=23.3 # cho filter trong DRF sửa lại requirements nhé
 channels==4.0.0
 channels-redis==4.1.0
 redis==5.0.0
+
+gunicorn==21.2.0
+whitenoise==6.5.0
+dj-database-url==2.1.0
+psycopg2-binary==2.9.9
