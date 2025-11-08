@@ -8,8 +8,8 @@ services:
       - ./Server:/app
     ports:
       - "8000:8000"
-    # env_file:
-    #   - ./Server/.env  # nếu có biến môi trường
+    env_file:
+      - "./Server/.env"  # nếu có biến môi trường
     depends_on:
       - db
       - redis

@@ -50,50 +50,43 @@ export default function MySchedulePage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key state
+
+  const fetchAppointments = async () => {
+    try {
+      setIsLoading(true);
+      const apiAppointments: ApiAppointment[] = await getDoctorAppointments();
+      const mappedAppointments: Appointment[] = apiAppointments.map(
+        (appt) => {
+          const timeslot = new Date(appt.timeslot);
+          return {
+            id: appt.id.toString(),
+            patientName: appt.patient_name,
+            date: timeslot,
+            time: format(timeslot, "HH:mm", { locale: vi }),
+            status: appt.status,
+            treatment: appt.reason,
+          };
+        }
+      );
+      setAppointments(mappedAppointments);
+    } catch (error) {
+      console.error("Failed to fetch appointments:", error);
+      toast.error("Không thể tải lịch hẹn. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        setIsLoading(true);
-        const apiAppointments: ApiAppointment[] = await getDoctorAppointments();
-        const mappedAppointments: Appointment[] = apiAppointments.map(
-          (appt) => {
-            const timeslot = new Date(appt.timeslot);
-            return {
-              id: appt.id.toString(),
-              patientName: appt.patient_name,
-              date: timeslot,
-              time: format(timeslot, "HH:mm", { locale: vi }),
-              status:
-                appt.status === "confirm"
-                  ? "Đã xác nhận"
-                  : appt.status === "pending"
-                  ? "Chờ xác nhận"
-                  : "Đã hủy",
-              treatment: appt.reason,
-            };
-          }
-        );
-        setAppointments(mappedAppointments);
-      } catch (error) {
-        console.error("Failed to fetch appointments:", error);
-        toast.error("Không thể tải lịch hẹn. Vui lòng thử lại.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchAppointments();
-  }, []);
+  }, [refreshKey]); // Add refreshKey as dependency
 
   const handleConfirmAppointment = async (id: string) => {
     try {
       await confirmAppointment(Number(id));
-      setAppointments((prev) =>
-        prev.map((appt) =>
-          appt.id === id ? { ...appt, status: "Đã xác nhận" } : appt
-        )
-      );
+      toast.success("Xác nhận lịch hẹn thành công");
+      await fetchAppointments(); // Fetch lại data trực tiếp
     } catch (error) {
       console.error("Failed to confirm appointment:", error);
       toast.error("Xác nhận lịch hẹn thất bại. Vui lòng thử lại.");
@@ -103,11 +96,8 @@ export default function MySchedulePage() {
   const handleCancelAppointment = async (id: string) => {
     try {
       await cancelAppointment(Number(id));
-      setAppointments((prev) =>
-        prev.map((appt) =>
-          appt.id === id ? { ...appt, status: "Đã hủy" } : appt
-        )
-      );
+      toast.success("Hủy lịch hẹn thành công");
+      await fetchAppointments(); // Fetch lại data trực tiếp
     } catch (error) {
       console.error("Failed to cancel appointment:", error);
       toast.error("Hủy lịch hẹn thất bại. Vui lòng thử lại.");
@@ -116,13 +106,13 @@ export default function MySchedulePage() {
 
   const totalAppointments = appointments.length;
   const confirmedAppointments = appointments.filter(
-    (appt) => appt.status === "Đã xác nhận"
+    (appt) => appt.status.toLowerCase() === "confirmed" || appt.status.toLowerCase() === "confirm"
   ).length;
   const pendingAppointments = appointments.filter(
-    (appt) => appt.status === "Chờ xác nhận"
+    (appt) => appt.status.toLowerCase() === "pending"
   ).length;
   const cancelAppoinments = appointments.filter(
-    (appt) => appt.status === "Đã hủy"
+    (appt) => appt.status.toLowerCase() === "cancelled" || appt.status.toLowerCase() === "canceled"
   ).length;
 
   const filteredAppointments = date
@@ -156,17 +146,21 @@ export default function MySchedulePage() {
         <div
           className={cn(
             "text-sm",
-            appointment.status === "Đã xác nhận"
+            appointment.status.toLowerCase() === "confirmed" || appointment.status.toLowerCase() === "confirm"
               ? "text-green-600"
-              : appointment.status === "Chờ xác nhận"
+              : appointment.status.toLowerCase() === "pending"
               ? "text-yellow-600"
               : "text-red-600"
           )}
         >
-          {appointment.status}
+          {appointment.status.toLowerCase() === "confirmed" || appointment.status.toLowerCase() === "confirm"
+            ? "Đã xác nhận"
+            : appointment.status.toLowerCase() === "pending"
+            ? "Chờ xác nhận"
+            : "Đã hủy"}
         </div>
         <div className="flex gap-2 mt-2">
-          {appointment.status === "Chờ xác nhận" && (
+          {appointment.status.toLowerCase() === "pending" && (
             <>
               <Button
                 variant="default"

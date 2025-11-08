@@ -135,7 +135,10 @@ export default function MySchedulePage() {
     {
       title: "Đã xác nhận",
       value: appointments
-        .filter((appt) => appt.status === "confirm")
+        .filter((appt) => {
+          const s = String(appt.status || "").toLowerCase();
+          return s === "confirm" || s === "confirmed";
+        })
         .length.toString(),
       footerLabel: "Lịch hẹn đã xác nhận",
       className: "bg-blue-50 hover:shadow-lg transition-shadow",
@@ -143,7 +146,7 @@ export default function MySchedulePage() {
     {
       title: "Chờ xác nhận",
       value: appointments
-        .filter((appt) => appt.status === "pending")
+        .filter((appt) => String(appt.status || "").toLowerCase() === "pending")
         .length.toString(),
       footerLabel: "Lịch hẹn đang chờ",
       className: "bg-yellow-50 hover:shadow-lg transition-shadow",
@@ -151,7 +154,10 @@ export default function MySchedulePage() {
     {
       title: "Đã hủy",
       value: appointments
-        .filter((appt) => appt.status === "cancelled")
+        .filter((appt) => {
+          const s = String(appt.status || "").toLowerCase();
+          return s === "cancelled" || s === "canceled";
+        })
         .length.toString(),
       footerLabel: "Lịch hẹn bị hủy",
       className: "bg-red-50 hover:shadow-lg transition-shadow",
@@ -211,16 +217,23 @@ export default function MySchedulePage() {
   const filterAppointmentsByStatus = (status: string) => {
     if (status === "All") return appointments;
     if (status === "Sắp tới") {
-      return appointments.filter(
-        (appt) =>
-          appt.status === "confirm" &&
-          isBefore(
-            new Date(),
-            new Date(appt.date.split("/").reverse().join("-"))
-          )
-      );
+      return appointments.filter((appt) => {
+        const s = String(appt.status || "").toLowerCase();
+        return (
+          (s === "confirm" || s === "confirmed") &&
+          isBefore(new Date(), new Date(appt.date.split("/").reverse().join("-")))
+        );
+      });
     }
-    return appointments.filter((appt) => appt.status === status);
+
+    // normalize status comparisons to handle different API values
+    return appointments.filter((appt) => {
+      const s = String(appt.status || "").toLowerCase();
+      const desired = String(status || "").toLowerCase();
+      if (desired === "confirm") return s === "confirm" || s === "confirmed";
+      if (desired === "cancelled") return s === "cancelled" || s === "canceled";
+      return s === desired;
+    });
   };
 
   return (
@@ -293,21 +306,28 @@ export default function MySchedulePage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          {appointment.status === "pending" && (
-                            <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                              {appointment.status}
-                            </span>
-                          )}
-                          {appointment.status === "confirm" && (
-                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                              {appointment.status}
-                            </span>
-                          )}
-                          {appointment.status === "cancelled" && (
-                            <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                              {appointment.status}
-                            </span>
-                          )}
+                          {(() => {
+                            const s = String(appointment.status || "").toLowerCase();
+                            if (s === "pending") {
+                              return (
+                                <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                  Chờ xác nhận
+                                </span>
+                              );
+                            }
+                            if (s === "confirm" || s === "confirmed") {
+                              return (
+                                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                  Đã xác nhận
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                Đã hủy
+                              </span>
+                            );
+                          })()}
                           <p className="text-sm text-muted-foreground my-2">
                             Lý do: {appointment.reason}
                           </p>
@@ -315,8 +335,10 @@ export default function MySchedulePage() {
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         <div className="flex gap-2">
-                          {appointment.status !== "cancelled" &&
-                            appointment.status !== "confirm" && (
+                          {(() => {
+                            const s = String(appointment.status || "").toLowerCase();
+                            const showCancelBtn = s !== "cancelled" && s !== "canceled" && s !== "confirm" && s !== "confirmed";
+                            return showCancelBtn ? (
                               <Button
                                 variant="destructive"
                                 size="sm"
@@ -326,7 +348,8 @@ export default function MySchedulePage() {
                               >
                                 Hủy lịch
                               </Button>
-                            )}
+                            ) : null;
+                          })()}
                           <Dialog
                             open={isDialogOpen}
                             onOpenChange={setIsDialogOpen}
@@ -378,7 +401,12 @@ export default function MySchedulePage() {
                                   </p>
                                   <p>
                                     <strong>Trạng thái:</strong>{" "}
-                                    {selectedAppointment.status}
+                                    {(selectedAppointment.status || "").toLowerCase() === "confirm" ||
+                                    (selectedAppointment.status || "").toLowerCase() === "confirmed"
+                                      ? "Đã xác nhận"
+                                      : (selectedAppointment.status || "").toLowerCase() === "pending"
+                                      ? "Chờ xác nhận"
+                                      : "Đã hủy"}
                                   </p>
                                   <p>
                                     <strong>Ngày tạo:</strong>{" "}

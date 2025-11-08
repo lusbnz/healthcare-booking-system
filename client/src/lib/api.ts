@@ -24,17 +24,25 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       try {
-        await refreshAccessToken();
-        const newToken = getAccessToken();
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        const newToken = await refreshAccessToken();
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
+        // Xóa tokens và chuyển hướng về trang login
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        
+        // Sử dụng window.location.href để đảm bảo refresh toàn bộ ứng dụng
         window.location.href = '/auth/login';
         return Promise.reject(refreshError);
       }
+    }
+
+    if (error.response?.status === 403) {
+      console.error("Permission denied:", error);
     }
 
     return Promise.reject(error);

@@ -19,6 +19,7 @@ export async function updateDoctorProfile(payload: {
   
 export async function getDoctorAppointments() {
     const res = await api.get("/doctors/appointments/")
+    console.log("API Response:", res.data); // Thêm log để debug
     return res.data
 }
   

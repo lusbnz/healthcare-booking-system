@@ -12,17 +12,35 @@ export function getRefreshToken() {
 }
 
 export async function refreshAccessToken() {
-  const res = await fetch("/api/users/token/refresh", {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ refresh: getRefreshToken() }),
-  });
+  try {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
 
-  if (!res.ok) throw new Error("Failed to refresh token");
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/token/refresh/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
 
-  const data = await res.json();
-  setTokens(data.access, data.refresh);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || "Failed to refresh token");
+    }
+
+    if (data.access) {
+      setTokens(data.access, refreshToken);
+      return data.access;
+    } else {
+      throw new Error("No access token in response");
+    }
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    // Không tự động chuyển hướng ở đây
+    throw error;
+  }
 }

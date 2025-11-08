@@ -23,20 +23,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function loadUser() {
-      if (getAccessToken()) {
+      const token = getAccessToken();
+      if (token) {
         try {
           const profile = await getUserProfile();
           setUser(profile);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Failed to load user profile:', error);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          // Chỉ xóa tokens nếu lỗi là 401 hoặc refresh token fail
+          if (error?.response?.status === 401 || error?.message?.includes('refresh token')) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            router.push('/auth/login');
+          }
         }
       }
       setIsLoading(false);
     }
     loadUser();
-  }, []);
+  }, [router]);
 
   const login = async (payload: { username: string; password: string }) => {
     try {
